@@ -1,10 +1,12 @@
 #include <LightGrid.h>
 #include <Storage.h>
 #include <State.h>
+#include <Buttons.h>
 
 LightGrid* lightgrid = new LightGrid(10, 11, 12);
 Storage* storage = new Storage();
 State* state = new State();
+Buttons* buttons = new Buttons();
 
 #define LIVE 0
 #define MIDI 1
