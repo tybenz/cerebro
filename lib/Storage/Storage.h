@@ -3,14 +3,17 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <Preset.h>
 
 class Storage
 {
     public:
         Storage();
-        void saveState(int mode, unsigned char loops, unsigned char midi1, unsigned char midi2, int lastPreset);
-        void savePresetByBankAndPatch(int bank, int patch, unsigned char loops, unsigned char midi1, unsigned char midi2);
-        void savePresetByNum(int num, unsigned char loops, unsigned char midi1, unsigned char midi2);
+        void saveState(int mode, unsigned char loops, int midi1, int midi2, int lastPreset);
+        void savePresetByNum(Preset *preset, int num);
+        void saveLoopsToPreset(unsigned char loops, int num);
+        void saveMidiToPreset(int midi1, int midi2, int num);
+        Preset* getPresetByNum(int num);
 };
 
 #endif //Storage_h

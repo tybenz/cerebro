@@ -7,29 +7,39 @@
 class State
 {
     private:
-        int mode;
         int currentPreset;
         int tempBank;
         int midi1;
         int midi2;
+        int looper[3];
         unsigned char loops;
         int getBank();
         int getPatch();
     public:
         State();
-        void setState(int newMode, int newPreset, int newMidi1, int newMidi2, unsigned char newLoops);
+        void setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
+        boolean diff(State* state);
+        State* copy();
         void midi1Up();
         void midi1Down();
         void midi2Up();
         void midi2Down();
-        void nextMode();
         void bankUp();
         void bankDown();
+        void clearTempBank();
+        void selectPatchByNum(int num);
         void selectPatch(int num);
         void selectPatch(int num, boolean useTempBank);
         void activateLoop(int num);
         void deactivateLoop(int num);
         void toggleLoop(int num);
+        int getPresetNum(int num);
+        unsigned char getLoops();
+        int getMidi1();
+        int getMidi2();
+        void activateLooperControl(int num);
+        void deactivateLooperControl(int num);
+        void neutralizeLooperControl(int num);
 };
 
 #endif //State_h

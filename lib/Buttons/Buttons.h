@@ -14,10 +14,11 @@ struct button {
     boolean press;
     boolean pressed;
     boolean pressHold;
+    boolean release;
 };
 
 const struct button initButton = {
-    -1.0, 0, 0, 0, 0, 0
+    -1.0, 0, 0, 0, 0, 0, 0
 };
 
 class Buttons
@@ -27,6 +28,7 @@ class Buttons
     public:
         Buttons();
         void updateStates(unsigned char states);
+        boolean* getStates();
         void updateState(int num, boolean state);
         boolean** detectEvents();
 };

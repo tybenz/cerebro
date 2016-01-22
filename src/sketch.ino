@@ -2,6 +2,7 @@
 #include <Storage.h>
 #include <State.h>
 #include <Buttons.h>
+#include <Preset.h>
 
 LightGrid* lightgrid = new LightGrid(10, 11, 12);
 Storage* storage = new Storage();
@@ -15,7 +16,10 @@ Buttons* buttons = new Buttons();
 #define COPYSWAPSAVE 4
 #define COPYSWAPSAVEWAIT 5
 #define BANKSEARCH 6
+#define SAVETYPE_LOOPS 0
+#define SAVETYPE_MIDI 1
 
+int prevMode = 0;
 int mode = 0;
 
 int modeButtonPin = 0;
@@ -26,6 +30,16 @@ int button4Pin    = 4;
 int button5Pin    = 5;
 
 long copySwapSaveStart = -1;
+int lastPresetNum;
+int srcPresetNum;
+int targetPresetNum;
+int saveType;
+unsigned char saveLoops;
+int saveMidi1;
+int saveMidi2;
+Preset *srcPreset;
+Preset *targetPreset;
+
 
 void setup() {
     Serial.begin(31250);
@@ -34,26 +48,28 @@ void setup() {
 }
 
 void loop() {
-    // CHECK BUTTONS
-    unsigned char states = 0x00;
-    int mode    = digitalRead(modeButtonPin);
-    states     |= mode << 5;
-    int button1 = digitalRead(button1Pin);
-    states     |= mode << 4;
-    int button2 = digitalRead(button2Pin);
-    states     |= mode << 3;
-    int button3 = digitalRead(button3Pin);
-    states     |= mode << 2;
-    int button4 = digitalRead(button4Pin);
-    states     |= mode << 1;
-    int button5 = digitalRead(button5Pin);
-    states     |= mode << 0;
-    buttons->updateStates(states);
+    State* oldState = state->copy();
 
+    // CHECK BUTTONS
+    unsigned char newStates = 0x00;
+    int mode    = digitalRead(modeButtonPin);
+    newStates     |= mode << 5;
+    int button1 = digitalRead(button1Pin);
+    newStates     |= mode << 4;
+    int button2 = digitalRead(button2Pin);
+    newStates     |= mode << 3;
+    int button3 = digitalRead(button3Pin);
+    newStates     |= mode << 2;
+    int button4 = digitalRead(button4Pin);
+    newStates     |= mode << 1;
+    int button5 = digitalRead(button5Pin);
+    newStates     |= mode << 0;
+    buttons->updateStates(newStates);
 
     boolean** events = buttons->detectEvents();
     boolean* presses = events[0];
     boolean* pressHolds = events[1];
+    boolean* releases = events[1];
 
     // save bools into readable vars
     boolean pressMode     = presses[0];
@@ -76,6 +92,16 @@ void loop() {
     boolean pressHold7    = pressHolds[7];
     boolean pressHold8    = pressHolds[8];
     boolean pressHold9    = pressHolds[9];
+    boolean releaseMode   = releases[0];
+    boolean release1      = releases[1];
+    boolean release2      = releases[2];
+    boolean release3      = releases[3];
+    boolean release4      = releases[4];
+    boolean release5      = releases[5];
+    boolean release6      = releases[6];
+    boolean release7      = releases[7];
+    boolean release8      = releases[8];
+    boolean release9      = releases[9];
 
     // UPDATE STATE
     if (pressMode) {
@@ -101,7 +127,9 @@ void loop() {
             state->toggleLoop(5);
         }
         if (pressHold9) {
-            // transition to SAVE
+            saveType = SAVETYPE_LOOPS;
+            unsigned char saveLoops = state->getLoops();
+            mode = COPYSWAPSAVE;
         }
     } else if (mode == MIDI) {
         // press on 1 & 2 trigger midi1 down/up
@@ -122,14 +150,20 @@ void loop() {
         }
         if(pressHold9) {
             // transition to SAVE
+            saveType = SAVETYPE_MIDI;
+            saveMidi1 = state->getMidi1();
+            saveMidi2 = state->getMidi2();
+            transition(COPYSWAPSAVE);
         }
     } else if (mode == PRESET) {
         // press on 1 & 2 trigger bank down/up. trigger BANKSEARCH
         if (press1) {
             state->bankDown();
+            transition(BANKSEARCH);
         }
         if (press2) {
             state->bankUp();
+            transition(BANKSEARCH);
         }
         if (press3) {
             state->selectPatch(0);
@@ -141,22 +175,46 @@ void loop() {
             state->selectPatch(2);
         }
         if (pressHold3) {
-            // copyPreset = State->getPreset(0);
-            // transition COPYSWAPSAVE
+            srcPresetNum = state->getPresetNum(0);
+            srcPreset = storage->getPresetByNum(srcPresetNum);
+            transition(COPYSWAPSAVE);
         }
         if (pressHold4) {
-            // copyPreset = State->getPreset(1);
-            // transition COPYSWAPSAVE
+            srcPresetNum = state->getPresetNum(0);
+            srcPreset = storage->getPresetByNum(srcPresetNum);
+            transition(COPYSWAPSAVE);
         }
         if (pressHold5) {
-            // copyPreset = State->getPreset(2);
-            // transition COPYSWAPSAVE
+            srcPresetNum = state->getPresetNum(2);
+            srcPreset = storage->getPresetByNum(srcPresetNum);
+            transition(COPYSWAPSAVE);
         }
     } else if (mode == LOOPER) {
         // XXX should this go through state + render or be "special" in that we
         // can hard-code right here?
         //
         // press on 1, 2, 3 trigger relays
+        if (press1) {
+            state->activateLooperControl(0);
+        }
+        if (press2) {
+            state->activateLooperControl(1);
+        }
+        if (press3) {
+            state->activateLooperControl(2);
+        }
+        if (release1) {
+            // set relay low
+            state->deactivateLooperControl(0);
+        }
+        if (release2) {
+            // set relay low
+            state->deactivateLooperControl(1);
+        }
+        if (release3) {
+            // set relay low
+            state->deactivateLooperControl(2);
+        }
     } else if (mode == COPYSWAPSAVE) {
         // when set, tempBank should be set to current bank
         if (press1) {
@@ -166,50 +224,56 @@ void loop() {
             state->bankUp();
         }
         if (pressHold1 || pressHold2) {
-            // trigger PRESET with lastPreset
+            state->selectPatchByNum(srcPresetNum);
+            transition(PRESET);
         }
-        if (press3) {
-            // if (copyPreset) {
-            //     state->save(copyPreset, 0);
-            // } else if (saveType) {
-            //     if (saveType == LOOPS) {
-            //         state->saveLoopsToPreset(saveLoops, 0);
-            //     } else if (saveType == MIDI) {
-            //         state->saveLoopsToPreset(saveMidi, 0);
-            //     }
-            // }
-            // save overwriteTarget
-            // set prevCopy
-            // transition COPYSWAPSAVEWAIT
+        if (press1 || press2 || press3) {
+            if (press1) {
+                targetPresetNum = state->getPresetNum(0);
+            }
+            if (press2) {
+                targetPresetNum = state->getPresetNum(1);
+            }
+            if (press3) {
+                targetPresetNum = state->getPresetNum(2);
+            }
+            targetPreset = storage->getPresetByNum(targetPresetNum);
+
+            if (prevMode == PRESET) {
+                storage->savePresetByNum(srcPreset, targetPresetNum);
+                delete srcPreset;
+            } else if (saveType) {
+                if (saveType == SAVETYPE_LOOPS) {
+                    storage->saveLoopsToPreset(saveLoops, targetPresetNum);
+                } else if (saveType == SAVETYPE_MIDI) {
+                    storage->saveMidiToPreset(saveMidi1, saveMidi2, targetPresetNum);
+                }
+            }
+            transition(COPYSWAPSAVEWAIT);
         }
     } else if (mode == COPYSWAPSAVEWAIT) {
         if (copySwapSaveStart == -1) {
             copySwapSaveStart = millis();
         } else if (millis() - copySwapSaveStart > 2000) {
-            // activate newPreset
-            // transition to PRESET
-            // return
+            state->selectPatchByNum(targetPresetNum);
+            delete targetPreset;
+            transition(PRESET);
         }
 
-        if (pressHold3) {
-            // if prevCopy -> undo and do swap
-            // activate newPreset
-            // transition to PRESET
-        }
-        if (pressHold4) {
-            // if prevCopy -> undo and do swap
-            // activate newPreset
-            // transition to PRESET
-        }
-        if (pressHold5) {
-            // if prevCopy -> undo and do swap
-            // activate newPreset
-            // transition to PRESET
+        if (pressHold3 || pressHold4 || pressHold5) {
+            if (srcPreset) {
+                storage->savePresetByNum(targetPreset, srcPresetNum);
+            }
+            state->selectPatchByNum(targetPresetNum);
+            delete targetPreset;
+            transition(PRESET);
         }
     } else if (mode == BANKSEARCH) {
         if (pressHold1 || pressHold2) {
-            // activate lastPreset
-            // transition to PRESET
+            // in bank search, last preset from PRESET mode is still active
+            // so just clear the temp bank and transition to preset
+            state->clearTempBank();
+            transition(PRESET);
         }
         if (press3) {
             state->selectPatch(0, true);
@@ -222,13 +286,28 @@ void loop() {
         }
     }
 
-    // re-render
+    boolean hasChanged = state->diff(oldState);
+    // RENDER
+    // light up leds according to state & mode
+    // send midi program changes if there's been a change (PRESET or MIDI)
+    // trigger appropriate loops if there's been a change (PRESET or LIVE)
+    // set looper control relays to high if activated
+    // set looper control relays to low if deactivated
+    // set all looper controls to neutral in the model
+
+
     // write to storage if anything has changed
 }
 
 void nextMode() {
+    prevMode = mode;
     mode++;
     if (mode > 3) {
         mode = LIVE;
     }
+}
+
+void transition(int newMode) {
+    prevMode = mode;
+    mode = newMode;
 }

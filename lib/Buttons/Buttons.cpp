@@ -35,7 +35,8 @@ void Buttons::updateState(int num, boolean state) {
 boolean** Buttons::detectEvents() {
     boolean presses[BUTTON_COUNT];
     boolean pressHolds[BUTTON_COUNT];
-    boolean* returnArr[2] = { presses, pressHolds };
+    boolean releases[BUTTON_COUNT];
+    boolean* returnArr[3] = { presses, pressHolds, releases };
     int i;
 
     for (i = 0; i < BUTTON_COUNT; i++) {
@@ -58,7 +59,7 @@ boolean** Buttons::detectEvents() {
             leftButton = buttons[i - 1];
         }
 
-        // note the time
+        // note the time when a button is first held down
         if (!button.prevState && button.state) {
             button.time = millis();
         }
@@ -92,6 +93,12 @@ boolean** Buttons::detectEvents() {
                 button.press = true;
             }
             button.time = -1;
+            button.release = true;
+            releases[i] = true;
+        }
+
+        if (!button.prevState && !button.state && button.release) {
+            button.release = false;
         }
 
         // Catch the press+release within 50ms case
