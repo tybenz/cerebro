@@ -32,11 +32,21 @@ void Buttons::updateState(int num, boolean state) {
     button.state = state;
 }
 
-int Buttons::detectEvent(int num) {
+boolean** Buttons::detectEvents() {
+    boolean presses[BUTTON_COUNT];
+    boolean pressHolds[BUTTON_COUNT];
+    boolean* returnArr[2] = { presses, pressHolds };
+    int i;
+
+    for (i = 0; i < BUTTON_COUNT; i++) {
+        presses[i] = 0x00;
+        pressHolds[i] = 0x00;
+    }
+
     struct button button;
     struct button leftButton;
 
-    for (int i = 0; i < BUTTON_COUNT; i++) {
+    for (i = 0; i < BUTTON_COUNT; i++) {
         button = buttons[i];
         leftButton = initButton;
 
@@ -60,6 +70,7 @@ int Buttons::detectEvent(int num) {
         if (button.state && button.time != -1 && millis() - button.time > 50) {
             if (!button.pressed && !button.press) {
                 button.press = true;
+                presses[i] = true;
             }
             if (!button.pressed && button.press) {
                 button.press = false;
@@ -71,6 +82,7 @@ int Buttons::detectEvent(int num) {
         // if button is pressed for 1 sec, it's a pressHold
         if (button.pressed && button.state && millis() - button.time > 1000) {
             button.pressHold = true;
+            pressHolds[i] = true;
         }
 
         // reinit button once its released
@@ -101,4 +113,6 @@ int Buttons::detectEvent(int num) {
             }
         }
     }
+
+    return returnArr;
 }

@@ -68,6 +68,10 @@ void State::selectPatch(int num) {
     currentPreset = getBank() * PPB + num;
 }
 
+void State::selectPatch(int num, boolean useTempBank) {
+    currentPreset = tempBank * PPB + num;
+}
+
 void State::activateLoop(int num) {
     loops |= 1 << num;
 }

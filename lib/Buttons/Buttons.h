@@ -28,7 +28,7 @@ class Buttons
         Buttons();
         void updateStates(unsigned char states);
         void updateState(int num, boolean state);
-        int detectEvent(int num);
+        boolean** detectEvents();
 };
 
 #endif //Buttons_h

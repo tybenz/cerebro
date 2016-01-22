@@ -26,6 +26,7 @@ class State
         void bankUp();
         void bankDown();
         void selectPatch(int num);
+        void selectPatch(int num, boolean useTempBank);
         void activateLoop(int num);
         void deactivateLoop(int num);
         void toggleLoop(int num);
