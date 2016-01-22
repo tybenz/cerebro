@@ -6,7 +6,7 @@
 
 class State
 {
-    private:
+    public:
         int currentPreset;
         int tempBank;
         int midi1;
@@ -15,7 +15,6 @@ class State
         unsigned char loops;
         int getBank();
         int getPatch();
-    public:
         State();
         void setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
         boolean diff(State* state);

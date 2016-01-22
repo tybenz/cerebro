@@ -3,20 +3,20 @@
 Storage::Storage() {
 }
 
-void Storage::saveState(int mode, unsigned char loops, int midi1, int midi2, int lastPreset) {
+void Storage::saveState(int mode, State* state) {
     // first unsigned char is 5 bits of loops followed by a zero followed by 2 bits for mode
-    unsigned char first = mode;
+    unsigned char first = state->loops;
     first << 0;
     first << 1;
     first << 1;
     first = first & mode;
 
-    unsigned char state[4] = {
-      first, midi1, midi2, lastPreset
+    unsigned char stateToWrite[4] = {
+      first, state->midi1, state->midi2, state->currentPreset
     };
 
     for (int i = 0; i < 4; i++) {
-        EEPROM.write(i, state[i]);
+        EEPROM.write(i, stateToWrite[i]);
     }
 }
 

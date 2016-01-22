@@ -40,6 +40,17 @@ int saveMidi2;
 Preset *srcPreset;
 Preset *targetPreset;
 
+int modeColors[7][3] = {
+    {255, 0, 0},
+    {0, 0, 255},
+    {0, 255, 0},
+    {255, 255, 0},
+    {255, 0, 255},
+    {255, 0, 255},
+    {255, 255, 0}
+};
+
+int writableMode = 0;
 
 void setup() {
     Serial.begin(31250);
@@ -286,17 +297,38 @@ void loop() {
         }
     }
 
-    boolean hasChanged = state->diff(oldState);
-    // RENDER
-    // light up leds according to state & mode
-    // send midi program changes if there's been a change (PRESET or MIDI)
-    // trigger appropriate loops if there's been a change (PRESET or LIVE)
-    // set looper control relays to high if activated
-    // set looper control relays to low if deactivated
-    // set all looper controls to neutral in the model
+    // If state has changed
+    if (state->diff(oldState)) {
+        // RENDER
+        // light up leds according to state & mode
+        int* colors = modeColors[mode];
+        lightgrid->setMode(colors[0], colors[1], colors[2]);
+        if (mode == LIVE) {
+            // light up which loops are active
+        } else if (mode == MIDI) {
+            // light up led5 if loop 5 is active
+        } else if (mode == PRESET) {
+            // light up bank leds
+            // light up selected patch
+        } else if (mode == LOOPER) {
+            // nothing
+        } else if (mode == COPYSWAPSAVE) {
+            // light up bank leds
+        } else if (mode == COPYSWAPSAVEWAIT) {
+            // light up bank leds
+            // flash selected patch led
+        }
 
+        // send midi program changes for midi1 and midi2
+        // trigger active loops, deactivate inactive loops
 
-    // write to storage if anything has changed
+        // set looper control relays to high if activated
+        // set looper control relays to low if deactivated
+        // set all looper controls to neutral in the model
+
+        // WRITE to storage
+        storage->saveState(writableMode, state);
+    }
 }
 
 void nextMode() {
@@ -309,5 +341,8 @@ void nextMode() {
 
 void transition(int newMode) {
     prevMode = mode;
+    if (newMode < 4) {
+        writableMode = newMode;
+    }
     mode = newMode;
 }
