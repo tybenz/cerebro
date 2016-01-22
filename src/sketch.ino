@@ -302,21 +302,62 @@ void loop() {
         // RENDER
         // light up leds according to state & mode
         int* colors = modeColors[mode];
-        lightgrid->setMode(colors[0], colors[1], colors[2]);
+        long on = (( millis() - copySwapSaveStart ) / 5) % 2;
+
+        if (mode != COPYSWAPSAVEWAIT || on) {
+            lightgrid->setMode(colors[0], colors[1], colors[2]);
+        } else {
+            // flash on COPYSWAPSAVEWAIT
+            lightgrid->setMode(0, 0, 0);
+        }
+
+        lightgrid->turnOffAll();
+
+        unsigned char loops;
+        int i;
+
         if (mode == LIVE) {
             // light up which loops are active
+            loops = state->loops;
+            for (i = 0; i < 5; i++) {
+                if (loops & 0x01) {
+                    lightgrid->turnOnLed(i);
+                }
+                loops = loops >> 1;
+            }
         } else if (mode == MIDI) {
             // light up led5 if loop 5 is active
+            loops = state->loops;
+            if((loops >> 4) & 1) {
+                lightgrid->turnOnLed(4);
+            }
         } else if (mode == PRESET) {
             // light up bank leds
-            // light up selected patch
+            int bank = state->getBank();
+            for (i = 0; i< 2; i++) {
+                if((bank >> i) & 1) {
+                    lightgrid->turnOnBankLed(i);
+                }
+            }
+            lightgrid->turnOnPatchLed(state->getPatch());
         } else if (mode == LOOPER) {
             // nothing
         } else if (mode == COPYSWAPSAVE) {
             // light up bank leds
+            int bank = state->getBank();
+            for (i = 0; i< 2; i++) {
+                if((bank >> i) & 1) {
+                    lightgrid->turnOnBankLed(i);
+                }
+            }
         } else if (mode == COPYSWAPSAVEWAIT) {
             // light up bank leds
-            // flash selected patch led
+            int bank = state->getBank();
+            for (i = 0; i< 2; i++) {
+                if((bank >> i) & 1) {
+                    lightgrid->turnOnBankLed(i);
+                }
+            }
         }
 
         // send midi program changes for midi1 and midi2

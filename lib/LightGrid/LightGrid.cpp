@@ -53,10 +53,32 @@ void LightGrid::setMode(int red, int green, int blue) {
     analogWrite(MODE_BLUE, green);
 }
 
+void LightGrid::turnOffAll() {
+    for (int i = 0; i < 8; i++) {
+        turnOffLed(i);
+    }
+}
+
 void LightGrid::turnOnLed(int num) {
     _shifter->setPin(num, HIGH);
 }
 
 void LightGrid::turnOffLed(int num) {
     _shifter->setPin(num, LOW);
+}
+
+void LightGrid::turnOnBankLed(int num) {
+    _shifter->setPin(5 + num, HIGH);
+}
+
+void LightGrid::turnOffBankLed(int num) {
+    _shifter->setPin(5 + num, LOW);
+}
+
+void LightGrid::turnOnPatchLed(int num) {
+    _shifter->setPin(2 + num, HIGH);
+}
+
+void LightGrid::turnOffPatchLed(int num) {
+    _shifter->setPin(2 + num, LOW);
 }
