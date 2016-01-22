@@ -23,6 +23,9 @@ class State
         void midi2Up();
         void midi2Down();
         void nextMode();
+        void bankUp();
+        void bankDown();
+        void selectPatch(int num);
         void activateLoop(int num);
         void deactivateLoop(int num);
         void toggleLoop(int num);
