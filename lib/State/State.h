@@ -17,7 +17,7 @@ class State
         int getPatch();
         State();
         void setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
-        boolean diff(State* state);
+        bool diff(State* state);
         State* copy();
         void midi1Up();
         void midi1Down();
@@ -28,7 +28,7 @@ class State
         void clearTempBank();
         void selectPatchByNum(int num);
         void selectPatch(int num);
-        void selectPatch(int num, boolean useTempBank);
+        void selectPatch(int num, bool useTempBank);
         void activateLoop(int num);
         void deactivateLoop(int num);
         void toggleLoop(int num);

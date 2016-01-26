@@ -11,8 +11,8 @@ class Shifter
     // Constructor
     Shifter(int SER_Pin, int RCLK_Pin, int SRCLK_Pin, int Number_of_Registers);
    	void write();
-   	void setPin(int index, boolean val);
-   	void setAll(boolean val);
+   	void setPin(int index, bool val);
+   	void setAll(bool val);
    	void clear();
 
 

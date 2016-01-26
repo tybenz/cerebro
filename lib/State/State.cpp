@@ -20,7 +20,7 @@ void State::setState(int newPreset, int newMidi1, int newMidi2, unsigned char ne
     }
 }
 
-boolean State::diff(State* state) {
+bool State::diff(State* state) {
     if (currentPreset != state->currentPreset) {
         return true;
     }
@@ -96,7 +96,7 @@ void State::selectPatch(int num) {
     currentPreset = getBank() * PPB + num;
 }
 
-void State::selectPatch(int num, boolean useTempBank) {
+void State::selectPatch(int num, bool useTempBank) {
     currentPreset = tempBank * PPB + num;
     clearTempBank();
 }

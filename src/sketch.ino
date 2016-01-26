@@ -9,6 +9,7 @@ Storage* storage = new Storage();
 State* state = new State();
 Buttons* buttons = new Buttons();
 
+#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 #define LIVE 0
 #define MIDI 1
 #define PRESET 2
@@ -18,6 +19,8 @@ Buttons* buttons = new Buttons();
 #define BANKSEARCH 6
 #define SAVETYPE_LOOPS 0
 #define SAVETYPE_MIDI 1
+#define BUTTON_COUNT 10
+#define ACTUAL_BUTTON_COUNT 6
 
 int prevMode = 0;
 int mode = 0;
@@ -53,66 +56,102 @@ int modeColors[7][3] = {
 int writableMode = 0;
 
 void setup() {
-    Serial.begin(31250);
+    Serial.begin(9600);
+    Serial.println(10000);
     // read state from EEPROM
     // set state object and render
 }
 
 void loop() {
+    int i = 0;
     State* oldState = state->copy();
 
-    // CHECK BUTTONS
-    unsigned char newStates = 0x00;
-    int mode    = digitalRead(modeButtonPin);
-    newStates     |= mode << 5;
-    int button1 = digitalRead(button1Pin);
-    newStates     |= mode << 4;
-    int button2 = digitalRead(button2Pin);
-    newStates     |= mode << 3;
-    int button3 = digitalRead(button3Pin);
-    newStates     |= mode << 2;
-    int button4 = digitalRead(button4Pin);
-    newStates     |= mode << 1;
-    int button5 = digitalRead(button5Pin);
-    newStates     |= mode << 0;
+    bool newStates[ACTUAL_BUTTON_COUNT] = {
+        0, 0, 0, 0, 0, 0
+    };
+
+    if (Serial.available()) {
+        char ch = Serial.read();
+
+        if (ch >= '0') {
+            newStates[0] = true;
+        }
+        if (ch >= '1') {
+            newStates[1] = true;
+        }
+        if (ch >= '2') {
+            newStates[2] = true;
+        }
+        if (ch >= '3') {
+            newStates[3] = true;
+        }
+        if (ch >= '4') {
+            newStates[4] = true;
+        }
+        if (ch >= '5') {
+            newStates[5] = true;
+        }
+    }
     buttons->updateStates(newStates);
 
-    boolean** events = buttons->detectEvents();
-    boolean* presses = events[0];
-    boolean* pressHolds = events[1];
-    boolean* releases = events[1];
+    // CHECK BUTTONS
+    // unsigned char newStates = 0x00;
+    // int mode    = digitalRead(modeButtonPin);
+    // newStates     |= mode << 5;
+    // int button1 = digitalRead(button1Pin);
+    // newStates     |= mode << 4;
+    // int button2 = digitalRead(button2Pin);
+    // newStates     |= mode << 3;
+    // int button3 = digitalRead(button3Pin);
+    // newStates     |= mode << 2;
+    // int button4 = digitalRead(button4Pin);
+    // newStates     |= mode << 1;
+    // int button5 = digitalRead(button5Pin);
+    // newStates     |= mode << 0;
+    // buttons->updateStates(newStates);
+
+    bool presses[BUTTON_COUNT] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    bool pressHolds[BUTTON_COUNT] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    bool releases[BUTTON_COUNT] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    buttons->detectEvents(presses, pressHolds, releases);
 
     // save bools into readable vars
-    boolean pressMode     = presses[0];
-    boolean press1        = presses[1];
-    boolean press2        = presses[2];
-    boolean press3        = presses[3];
-    boolean press4        = presses[4];
-    boolean press5        = presses[5];
-    boolean press6        = presses[6];
-    boolean press7        = presses[7];
-    boolean press8        = presses[8];
-    boolean press9        = presses[9];
-    boolean pressHoldMode = pressHolds[0];
-    boolean pressHold1    = pressHolds[1];
-    boolean pressHold2    = pressHolds[2];
-    boolean pressHold3    = pressHolds[3];
-    boolean pressHold4    = pressHolds[4];
-    boolean pressHold5    = pressHolds[5];
-    boolean pressHold6    = pressHolds[6];
-    boolean pressHold7    = pressHolds[7];
-    boolean pressHold8    = pressHolds[8];
-    boolean pressHold9    = pressHolds[9];
-    boolean releaseMode   = releases[0];
-    boolean release1      = releases[1];
-    boolean release2      = releases[2];
-    boolean release3      = releases[3];
-    boolean release4      = releases[4];
-    boolean release5      = releases[5];
-    boolean release6      = releases[6];
-    boolean release7      = releases[7];
-    boolean release8      = releases[8];
-    boolean release9      = releases[9];
+    bool pressMode     = presses[0];
+    bool press1        = presses[1];
+    bool press2        = presses[2];
+    bool press3        = presses[3];
+    bool press4        = presses[4];
+    bool press5        = presses[5];
+    bool press6        = presses[6];
+    bool press7        = presses[7];
+    bool press8        = presses[8];
+    bool press9        = presses[9];
+    bool pressHoldMode = pressHolds[0];
+    bool pressHold1    = pressHolds[1];
+    bool pressHold2    = pressHolds[2];
+    bool pressHold3    = pressHolds[3];
+    bool pressHold4    = pressHolds[4];
+    bool pressHold5    = pressHolds[5];
+    bool pressHold6    = pressHolds[6];
+    bool pressHold7    = pressHolds[7];
+    bool pressHold8    = pressHolds[8];
+    bool pressHold9    = pressHolds[9];
+    bool releaseMode   = releases[0];
+    bool release1      = releases[1];
+    bool release2      = releases[2];
+    bool release3      = releases[3];
+    bool release4      = releases[4];
+    bool release5      = releases[5];
+    bool release6      = releases[6];
+    bool release7      = releases[7];
+    bool release8      = releases[8];
+    bool release9      = releases[9];
 
     // UPDATE STATE
     if (pressMode) {
@@ -297,79 +336,79 @@ void loop() {
         }
     }
 
-    // If state has changed
-    if (state->diff(oldState)) {
-        // RENDER
-        // light up leds according to state & mode
-        int* colors = modeColors[mode];
-        long on = (( millis() - copySwapSaveStart ) / 5) % 2;
+    /* // If state has changed */
+    /* if (state->diff(oldState)) { */
+    /*     // RENDER */
+    /*     // light up leds according to state & mode */
+    /*     int* colors = modeColors[mode]; */
+    /*     long on = (( millis() - copySwapSaveStart ) / 5) % 2; */
 
-        if (mode != COPYSWAPSAVEWAIT || on) {
-            lightgrid->setMode(colors[0], colors[1], colors[2]);
-        } else {
-            // flash on COPYSWAPSAVEWAIT
-            lightgrid->setMode(0, 0, 0);
-        }
+    /*     if (mode != COPYSWAPSAVEWAIT || on) { */
+    /*         lightgrid->setMode(colors[0], colors[1], colors[2]); */
+    /*     } else { */
+    /*         // flash on COPYSWAPSAVEWAIT */
+    /*         lightgrid->setMode(0, 0, 0); */
+    /*     } */
 
-        lightgrid->turnOffAll();
+    /*     lightgrid->turnOffAll(); */
 
-        unsigned char loops;
-        int i;
+    /*     unsigned char loops; */
+    /*     int i; */
 
-        if (mode == LIVE) {
-            // light up which loops are active
-            loops = state->loops;
-            for (i = 0; i < 5; i++) {
-                if (loops & 0x01) {
-                    lightgrid->turnOnLed(i);
-                }
-                loops = loops >> 1;
-            }
-        } else if (mode == MIDI) {
-            // light up led5 if loop 5 is active
-            loops = state->loops;
-            if((loops >> 4) & 1) {
-                lightgrid->turnOnLed(4);
-            }
-        } else if (mode == PRESET) {
-            // light up bank leds
-            int bank = state->getBank();
-            for (i = 0; i< 2; i++) {
-                if((bank >> i) & 1) {
-                    lightgrid->turnOnBankLed(i);
-                }
-            }
-            lightgrid->turnOnPatchLed(state->getPatch());
-        } else if (mode == LOOPER) {
-            // nothing
-        } else if (mode == COPYSWAPSAVE) {
-            // light up bank leds
-            int bank = state->getBank();
-            for (i = 0; i< 2; i++) {
-                if((bank >> i) & 1) {
-                    lightgrid->turnOnBankLed(i);
-                }
-            }
-        } else if (mode == COPYSWAPSAVEWAIT) {
-            // light up bank leds
-            int bank = state->getBank();
-            for (i = 0; i< 2; i++) {
-                if((bank >> i) & 1) {
-                    lightgrid->turnOnBankLed(i);
-                }
-            }
-        }
+    /*     if (mode == LIVE) { */
+    /*         // light up which loops are active */
+    /*         loops = state->loops; */
+    /*         for (i = 0; i < 5; i++) { */
+    /*             if (loops & 0x01) { */
+    /*                 lightgrid->turnOnLed(i); */
+    /*             } */
+    /*             loops = loops >> 1; */
+    /*         } */
+    /*     } else if (mode == MIDI) { */
+    /*         // light up led5 if loop 5 is active */
+    /*         loops = state->loops; */
+    /*         if((loops >> 4) & 1) { */
+    /*             lightgrid->turnOnLed(4); */
+    /*         } */
+    /*     } else if (mode == PRESET) { */
+    /*         // light up bank leds */
+    /*         int bank = state->getBank(); */
+    /*         for (i = 0; i< 2; i++) { */
+    /*             if((bank >> i) & 1) { */
+    /*                 lightgrid->turnOnBankLed(i); */
+    /*             } */
+    /*         } */
+    /*         lightgrid->turnOnPatchLed(state->getPatch()); */
+    /*     } else if (mode == LOOPER) { */
+    /*         // nothing */
+    /*     } else if (mode == COPYSWAPSAVE) { */
+    /*         // light up bank leds */
+    /*         int bank = state->getBank(); */
+    /*         for (i = 0; i< 2; i++) { */
+    /*             if((bank >> i) & 1) { */
+    /*                 lightgrid->turnOnBankLed(i); */
+    /*             } */
+    /*         } */
+    /*     } else if (mode == COPYSWAPSAVEWAIT) { */
+    /*         // light up bank leds */
+    /*         int bank = state->getBank(); */
+    /*         for (i = 0; i< 2; i++) { */
+    /*             if((bank >> i) & 1) { */
+    /*                 lightgrid->turnOnBankLed(i); */
+    /*             } */
+    /*         } */
+    /*     } */
 
-        // send midi program changes for midi1 and midi2
-        // trigger active loops, deactivate inactive loops
+    /*     // send midi program changes for midi1 and midi2 */
+    /*     // trigger active loops, deactivate inactive loops */
 
-        // set looper control relays to high if activated
-        // set looper control relays to low if deactivated
-        // set all looper controls to neutral in the model
+    /*     // set looper control relays to high if activated */
+    /*     // set looper control relays to low if deactivated */
+    /*     // set all looper controls to neutral in the model */
 
-        // WRITE to storage
-        storage->saveState(writableMode, state);
-    }
+    /*     // WRITE to storage */
+    /*     storage->saveState(writableMode, state); */
+    /* } */
 }
 
 void nextMode() {

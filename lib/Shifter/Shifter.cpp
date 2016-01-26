@@ -47,7 +47,7 @@ void Shifter::write(){
   digitalWrite(_RCLK_Pin, HIGH);
 }
 
-void Shifter::setPin(int index, boolean val){
+void Shifter::setPin(int index, bool val){
 	int byteIndex = index/8;
 	int bitIndex = index % 8;
 
@@ -59,7 +59,7 @@ void Shifter::setPin(int index, boolean val){
 	_shiftRegisters[byteIndex] = current; //set the value
 }
 
-void Shifter::setAll(boolean val){
+void Shifter::setAll(bool val){
 //set all register pins to LOW
   for(int i = _Number_of_Registers * 8 - 1; i >=  0; i--){
      setPin(i, val);

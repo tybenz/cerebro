@@ -9,16 +9,17 @@
 
 struct button {
     long time;
-    boolean state;
-    boolean prevState;
-    boolean press;
-    boolean pressed;
-    boolean pressHold;
-    boolean release;
+    bool state;
+    bool prevState;
+    bool press;
+    bool pressed;
+    bool pressHold;
+    bool pressedHeld;
+    bool release;
 };
 
 const struct button initButton = {
-    -1.0, 0, 0, 0, 0, 0, 0
+    -1.0, 0, 0, 0, 0, 0, 0, 0
 };
 
 class Buttons
@@ -27,10 +28,10 @@ class Buttons
         struct button buttons[BUTTON_COUNT];
     public:
         Buttons();
-        void updateStates(unsigned char states);
-        boolean* getStates();
-        void updateState(int num, boolean state);
-        boolean** detectEvents();
+        void updateStates(bool *states);
+        bool* getStates();
+        void updateState(int num, bool state);
+        void detectEvents(bool *presses, bool *pressHolds, bool *releases);
 };
 
 #endif //Buttons_h

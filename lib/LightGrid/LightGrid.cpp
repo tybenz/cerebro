@@ -60,25 +60,31 @@ void LightGrid::turnOffAll() {
 }
 
 void LightGrid::turnOnLed(int num) {
-    _shifter->setPin(num, HIGH);
+    /* _shifter->setPin(num, HIGH); */
+    /* Serial.println(100 + num); */
 }
 
 void LightGrid::turnOffLed(int num) {
-    _shifter->setPin(num, LOW);
+    /* _shifter->setPin(num, LOW); */
+    /* Serial.println(200 + num); */
 }
 
 void LightGrid::turnOnBankLed(int num) {
-    _shifter->setPin(5 + num, HIGH);
+    /* _shifter->setPin(5 + num, HIGH); */
+    /* Serial.println(500 + num); */
 }
 
 void LightGrid::turnOffBankLed(int num) {
-    _shifter->setPin(5 + num, LOW);
+    /* _shifter->setPin(5 + num, LOW); */
+    /* Serial.println(600 + num); */
 }
 
 void LightGrid::turnOnPatchLed(int num) {
-    _shifter->setPin(2 + num, HIGH);
+    /* _shifter->setPin(2 + num, HIGH); */
+    /* Serial.println(1200 + num); */
 }
 
 void LightGrid::turnOffPatchLed(int num) {
-    _shifter->setPin(2 + num, LOW);
+    /* _shifter->setPin(2 + num, LOW); */
+    /* Serial.println(1300 + num); */
 }

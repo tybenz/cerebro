@@ -11,38 +11,27 @@ Buttons::Buttons() {
     }
 }
 
-void Buttons::updateStates(unsigned char states) {
-    // states is a byte where first 6 bits reflect on/off of buttons
-    // ex: 00001100, means mode is off, button 1 off, button 2 on, button 3 on,
-    // button 4 off, button 5 off
-    for (int i = 2; i < 8; i++) {
-        struct button button = buttons[i-2];
+void Buttons::updateStates(bool *states) {
+    for (int i = 0; i < 6; i++) {
+        struct button button = buttons[i];
         button.prevState = button.state;
-        if(states & (1 << i)) {
+        if (states[i]) {
             button.state = true;
         } else {
             button.state = false;
         }
+        buttons[i] = button;
     }
 }
 
-void Buttons::updateState(int num, boolean state) {
+void Buttons::updateState(int num, bool state) {
     struct button button = buttons[num];
     button.prevState = button.state;
     button.state = state;
 }
 
-boolean** Buttons::detectEvents() {
-    boolean presses[BUTTON_COUNT];
-    boolean pressHolds[BUTTON_COUNT];
-    boolean releases[BUTTON_COUNT];
-    boolean* returnArr[3] = { presses, pressHolds, releases };
+void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
     int i;
-
-    for (i = 0; i < BUTTON_COUNT; i++) {
-        presses[i] = 0x00;
-        pressHolds[i] = 0x00;
-    }
 
     struct button button;
     struct button leftButton;
@@ -68,12 +57,11 @@ boolean** Buttons::detectEvents() {
         // if enough time has passed, trigger a press
         // if the press has already been triggered switch it to "pressed"
         // so the press only fires 1 time
-        if (button.state && button.time != -1 && millis() - button.time > 50) {
+        if (button.state /*&& button.time != -1 && ( millis() - button.time ) > 50*/) {
             if (!button.pressed && !button.press) {
                 button.press = true;
                 presses[i] = true;
-            }
-            if (!button.pressed && button.press) {
+            } else if (!button.pressed && button.press) {
                 button.press = false;
                 button.pressed = true;
             }
@@ -81,9 +69,15 @@ boolean** Buttons::detectEvents() {
 
         // detect presshold
         // if button is pressed for 1 sec, it's a pressHold
+        // XXX need a pressed held (past tense)
         if (button.pressed && button.state && millis() - button.time > 1000) {
-            button.pressHold = true;
-            pressHolds[i] = true;
+            if (!button.pressedHeld && !button.pressHold) {
+                button.pressHold = true;
+                pressHolds[i] = true;
+            } else if (!button.pressedHeld && button.pressHold) {
+                button.pressHold = false;
+                button.pressedHeld = true;
+            }
         }
 
         // reinit button once its released
@@ -119,7 +113,6 @@ boolean** Buttons::detectEvents() {
                 buttons[i+4].state = HIGH;
             }
         }
+        buttons[i] = button;
     }
-
-    return returnArr;
 }
