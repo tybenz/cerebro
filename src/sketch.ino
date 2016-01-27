@@ -57,7 +57,7 @@ int writableMode = 0;
 
 void setup() {
     Serial.begin(9600);
-    Serial.println(10000);
+    Serial.println('Hello world');
     // read state from EEPROM
     // set state object and render
 }

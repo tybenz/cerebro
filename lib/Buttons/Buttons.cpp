@@ -38,14 +38,10 @@ void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
 
     for (i = 0; i < BUTTON_COUNT; i++) {
         button = buttons[i];
-        leftButton = initButton;
 
-        // Buttons should be
-        // 0(mode)         1 <-6-> 2 <-7-> 3 <-8-> 4 <-9-> 5
-        //     start checking left ^    stop chekcing left ^
-        if (i > START_INDEX_FOR_SIDE_BY_SIDE_BUTTONS &&
-            i <= END_INDEX_FOR_SIDE_BY_SIDE_BUTTONS) {
-            leftButton = buttons[i - 1];
+        // finish reinitialization of a button by stetting release to false
+        if (!button.prevState && !button.state && button.release) {
+            button.release = false;
         }
 
         // note the time when a button is first held down
@@ -57,7 +53,7 @@ void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
         // if enough time has passed, trigger a press
         // if the press has already been triggered switch it to "pressed"
         // so the press only fires 1 time
-        if (button.state /*&& button.time != -1 && ( millis() - button.time ) > 50*/) {
+        if (button.state && button.time != -1 && ( millis() - button.time ) > 50) {
             if (!button.pressed && !button.press) {
                 button.press = true;
                 presses[i] = true;
@@ -69,7 +65,6 @@ void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
 
         // detect presshold
         // if button is pressed for 1 sec, it's a pressHold
-        // XXX need a pressed held (past tense)
         if (button.pressed && button.state && millis() - button.time > 1000) {
             if (!button.pressedHeld && !button.pressHold) {
                 button.pressHold = true;
@@ -82,22 +77,43 @@ void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
 
         // reinit button once its released
         if (button.prevState && !button.state) {
-            // if it pressed and released with 50 ms, trigger press
-            if (millis() - button.time <= 50) {
-                button.press = true;
-            }
-            button.time = -1;
             button.release = true;
             releases[i] = true;
+            // if it pressed and released with 50 ms, trigger press
+            if (!button.pressed) {
+                // XXX release will also be set in this case
+                // But releases are only used for looper control so immediate
+                // press + release is okay for now
+                button.press = true;
+            } else {
+                // reset everything but release (will get reset next tick)
+                button.time = -1;
+                button.pressed = false;
+                button.pressedHeld = false;
+                button.pressHold = false;
+                button.press = false;
+            }
         }
 
-        if (!button.prevState && !button.state && button.release) {
-            button.release = false;
-        }
-
-        // Catch the press+release within 50ms case
+        // Reset after the press+release within 50ms case
         if (!button.prevState && !button.state && button.press) {
+            // reset everything
             button.press = false;
+            button.time = -1;
+            button.pressed = false;
+            button.pressedHeld = false;
+            button.pressHold = false;
+            button.released = false;
+        }
+
+        // Buttons should be
+        // 0(mode)         1 <-6-> 2 <-7-> 3 <-8-> 4 <-9-> 5
+        //     start checking left ^    stop chekcing left ^
+        if (i > START_INDEX_FOR_SIDE_BY_SIDE_BUTTONS &&
+            i <= END_INDEX_FOR_SIDE_BY_SIDE_BUTTONS) {
+            leftButton = buttons[i - 1];
+        } else {
+            leftButton = initButton;
         }
 
         // if button state is HIGH for first 50 ms, time will be set, but press
