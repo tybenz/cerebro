@@ -2,7 +2,6 @@
 #define Buttons_h
 
 #include <Arduino.h>
-#include <Shifter.h>
 #include <math.h>
 
 #define BUTTON_COUNT 10
@@ -28,9 +27,8 @@ class Buttons
         struct button buttons[BUTTON_COUNT];
     public:
         Buttons();
-        void updateStates(bool *states);
+        void updateStates(int num);
         bool* getStates();
-        void updateState(int num, bool state);
         void detectEvents(bool *presses, bool *pressHolds, bool *releases);
 };
 

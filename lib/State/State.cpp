@@ -1,7 +1,7 @@
 #include <State.h>
 
 int PPB = 3; // patches per bank
-int NUM_BANKS = 7; // binary 3 digits (not zero)
+int NUM_BANKS = 15; // binary 3 digits (not zero)
 int MAX_PRESETS = PPB * NUM_BANKS;
 
 State::State() : currentPreset(0), tempBank(-1), midi1(0x00), midi2(0x00), loops(0x00) {

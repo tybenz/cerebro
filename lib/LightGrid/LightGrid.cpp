@@ -1,23 +1,21 @@
 #include <LightGrid.h>
 
-#define NUM_REGISTERS 1
 #define MODE_RED 0 // mode led
 #define MODE_GREEN 1 // mode led
 #define MODE_BLUE 2 // mode led
-#define LED1 0 // loop 1
-#define LED2 1 // loop 2
-#define LED3 2 // loop 3
-#define LED4 3 // loop 4
-#define LED5 4 // loop 5
-#define LED6 5 // bank bit 1
-#define LED7 6 // bank bit 2
-#define LED8 7 // bank bit 3
+#define NUM_LEDS 9
 
-LightGrid::LightGrid(int serPin, int rClockPin, int srClockPin) {
+LightGrid::LightGrid(int serPin, int rClockPin, int srClockPin, int lastPin) {
     // Pin mode set by shifter lib
-    _shifter = new Shifter(serPin, rClockPin, srClockPin, NUM_REGISTERS);
+    _shifter = new Shifter(serPin, rClockPin, srClockPin, 1);
+    _lastPin = lastPin;
+    pinMode(_lastPin, OUTPUT);
 
     clearShifter();
+}
+
+void LightGrid::writeShifter() {
+    _shifter->write();
 }
 
 void LightGrid::clearShifter() {
@@ -25,66 +23,83 @@ void LightGrid::clearShifter() {
     _shifter->write();
 }
 
-void LightGrid::set(unsigned char grid, int red, int green, int blue) {
+void LightGrid::set(bool* leds, int red, int green, int blue) {
+    setLeds(leds);
+    setMode(red, green, blue);
+}
+
+void LightGrid::setLeds(bool* leds) {
+    _shifter->clear();
+    for (int i = 0; i < NUM_LEDS; i++) {
+        if (leds[i]) {
+            turnOnLed(i);
+        } else {
+            turnOffLed(i);
+        }
+    }
+    _shifter->write();
+}
+
+void LightGrid::setMode(int red, int green, int blue) {
     if (red != -1) {
         analogWrite(MODE_RED, red);
         analogWrite(MODE_GREEN, blue);
         analogWrite(MODE_BLUE, green);
     }
-
-    int i = 0;
-
-    while (i < 8) {
-        if (grid & 0x01) {
-            turnOnLed(i);
-        }
-        else {
-            turnOffLed(i);
-        }
-
-        i++;
-        grid = grid >> 1;
-    }
-}
-
-void LightGrid::setMode(int red, int green, int blue) {
-    analogWrite(MODE_RED, red);
-    analogWrite(MODE_GREEN, blue);
-    analogWrite(MODE_BLUE, green);
 }
 
 void LightGrid::turnOffAll() {
-    for (int i = 0; i < 8; i++) {
+    _shifter->clear();
+    for (int i = 0; i < NUM_LEDS; i++) {
         turnOffLed(i);
     }
+    _shifter->write();
 }
 
 void LightGrid::turnOnLed(int num) {
-    /* _shifter->setPin(num, HIGH); */
-    /* Serial.println(100 + num); */
+    if (num == 8) {
+        digitalWrite(_lastPin, HIGH);
+    } else {
+        _shifter->setPin(num, HIGH);
+    }
+}
+
+void LightGrid::turnOnLed(int num, int offset) {
+    if (num == 8) {
+        digitalWrite(_lastPin, HIGH);
+    } else {
+        _shifter->setPin(num + offset, HIGH);
+    }
 }
 
 void LightGrid::turnOffLed(int num) {
-    /* _shifter->setPin(num, LOW); */
-    /* Serial.println(200 + num); */
+    if (num == 8) {
+        digitalWrite(_lastPin, LOW);
+    } else {
+        _shifter->setPin(num, LOW);
+    }
+}
+
+void LightGrid::turnOffLed(int num, int offset) {
+    if (num == 8) {
+        digitalWrite(_lastPin, LOW);
+    } else {
+        _shifter->setPin(num + offset, LOW);
+    }
 }
 
 void LightGrid::turnOnBankLed(int num) {
-    /* _shifter->setPin(5 + num, HIGH); */
-    /* Serial.println(500 + num); */
+    turnOnLed(num, 5);
 }
 
 void LightGrid::turnOffBankLed(int num) {
-    /* _shifter->setPin(5 + num, LOW); */
-    /* Serial.println(600 + num); */
+    turnOffLed(num, 5);
 }
 
 void LightGrid::turnOnPatchLed(int num) {
-    /* _shifter->setPin(2 + num, HIGH); */
-    /* Serial.println(1200 + num); */
+    turnOnLed(num, 2);
 }
 
 void LightGrid::turnOffPatchLed(int num) {
-    /* _shifter->setPin(2 + num, LOW); */
-    /* Serial.println(1300 + num); */
+    turnOffLed(num, 2);
 }
