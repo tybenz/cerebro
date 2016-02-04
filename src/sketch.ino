@@ -77,7 +77,7 @@ int oldInput = 0;
 void loop() {
     int input = analogRead(A5); // get the analog value
     if (input != oldInput) {
-        delay(50);
+        delay(20);
         int input2 = analogRead(A5);
         if (input - input2 < 20 && input - input2 > -20) {
             oldInput = input;
