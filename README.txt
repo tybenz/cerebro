@@ -20,7 +20,7 @@ For a press, keep last state for 1sec, if it's a PH, jump back to that state and
 *LIVE (red)
 -----------
 1-5 patches
-PH9 -> SAVE
+PH5 -> SAVE
 
 
 *MIDI (blue)
@@ -28,7 +28,7 @@ PH9 -> SAVE
 1 & 2 control Zoom
 3 & 4 control Nova Drive
 5 controls bypass loop #1
-PH9 -> SAVE
+PH5 -> SAVE
 
 
 *LOOPER (green)
