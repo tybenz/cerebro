@@ -26,6 +26,7 @@ class State
         void bankUp();
         void bankDown();
         void clearTempBank();
+        int getTempBank();
         void selectPatchByNum(int num);
         void selectPatch(int num);
         void selectPatch(int num, bool useTempBank);
@@ -33,6 +34,7 @@ class State
         void deactivateLoop(int num);
         void toggleLoop(int num);
         int getPresetNum(int num);
+        int getTempPresetNum(int num);
         unsigned char getLoops();
         int getMidi1();
         int getMidi2();

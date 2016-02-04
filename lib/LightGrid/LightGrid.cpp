@@ -1,9 +1,9 @@
 #include <LightGrid.h>
 
-#define MODE_RED 0 // mode led
-#define MODE_GREEN 1 // mode led
-#define MODE_BLUE 2 // mode led
 #define NUM_LEDS 9
+int MODE_RED = A0;
+int MODE_GREEN = A1;
+int MODE_BLUE = A2;
 
 LightGrid::LightGrid(int serPin, int rClockPin, int srClockPin, int lastPin) {
     // Pin mode set by shifter lib
@@ -43,8 +43,8 @@ void LightGrid::setLeds(bool* leds) {
 void LightGrid::setMode(int red, int green, int blue) {
     if (red != -1) {
         analogWrite(MODE_RED, red);
-        analogWrite(MODE_GREEN, blue);
-        analogWrite(MODE_BLUE, green);
+        analogWrite(MODE_GREEN, green);
+        analogWrite(MODE_BLUE, blue);
     }
 }
 

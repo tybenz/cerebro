@@ -126,6 +126,14 @@ int State::getBank() {
     return currentPreset / PPB;
 }
 
+int State::getTempBank() {
+    if (tempBank == -1) {
+        return getBank();
+    } else {
+        return tempBank;
+    }
+}
+
 int State::getPatch() {
     /* return currentPreset % PPB; */
     return currentPreset % PPB;
@@ -133,6 +141,10 @@ int State::getPatch() {
 
 int State::getPresetNum(int num) {
     return getBank() * PPB + num;
+}
+
+int State::getTempPresetNum(int num) {
+    return getTempBank() * PPB + num;
 }
 
 unsigned char State::getLoops() {

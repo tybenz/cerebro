@@ -41,7 +41,7 @@ bool prevPress = false;
 bool prevPressed = false;
 bool prevRelease = false;
 
-void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
+void Buttons::detectEvents(bool *presses, bool *presseds, bool *pressHolds, bool *releases) {
     int i;
 
     struct button button;
@@ -157,5 +157,6 @@ void Buttons::detectEvents(bool *presses, bool *pressHolds, bool *releases) {
             prevRelease = button.release;
         }
         buttons[i] = button;
+        presseds[i] = button.pressed;
     }
 }

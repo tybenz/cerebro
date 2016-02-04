@@ -17,6 +17,7 @@ Buttons* buttons = new Buttons();
 #define COPYSWAPSAVE 4
 #define COPYSWAPSAVEWAIT 5
 #define BANKSEARCH 6
+#define SAVETYPE_NONE -1
 #define SAVETYPE_LOOPS 0
 #define SAVETYPE_MIDI 1
 #define BUTTON_COUNT 10
@@ -44,13 +45,20 @@ Preset *srcPreset;
 Preset *targetPreset;
 
 int modeColors[7][3] = {
+    // LIVE red
     {255, 0, 0},
+    // MIDI blue
     {0, 0, 255},
+    // PRESET green
     {0, 255, 0},
+    // LOOPER yellow
     {255, 255, 0},
-    {255, 0, 255},
-    {255, 0, 255},
-    {255, 255, 0}
+    // COPYSWAPSAVE magenta
+    {255, 50, 255},
+    // COPYSWAPSAVEWAIT magenta
+    {255, 50, 255},
+    // BANKSEARCH green
+    {0, 255, 0}
 };
 
 int writableMode = 0;
@@ -58,7 +66,7 @@ int writableMode = 0;
 void setup() {
     lightgrid = new LightGrid(3, 4, 5, 6);
     Serial.begin(9600);
-    Serial.println('Hello world');
+    Serial.println(10000);
     pinMode(A5, INPUT_PULLUP); // sets analog pin for input
     // read state from EEPROM
     // set state object and render
@@ -81,13 +89,16 @@ void loop() {
             bool presses[BUTTON_COUNT] = {
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
+            bool presseds[BUTTON_COUNT] = {
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            };
             bool pressHolds[BUTTON_COUNT] = {
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
             bool releases[BUTTON_COUNT] = {
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
-            buttons->detectEvents(presses, pressHolds, releases);
+            buttons->detectEvents(presses, presseds, pressHolds, releases);
 
             // save bools into readable vars
             bool pressMode     = presses[0];
@@ -100,6 +111,16 @@ void loop() {
             bool press7        = presses[7];
             bool press8        = presses[8];
             bool press9        = presses[9];
+            bool pressedMode     = presseds[0];
+            bool pressed1        = presseds[1];
+            bool pressed2        = presseds[2];
+            bool pressed3        = presseds[3];
+            bool pressed4        = presseds[4];
+            bool pressed5        = presseds[5];
+            bool pressed6        = presseds[6];
+            bool pressed7        = presseds[7];
+            bool pressed8        = presseds[8];
+            bool pressed9        = presseds[9];
             bool pressHoldMode = pressHolds[0];
             bool pressHold1    = pressHolds[1];
             bool pressHold2    = pressHolds[2];
@@ -146,8 +167,8 @@ void loop() {
                 }
                 if (pressHold5) {
                     saveType = SAVETYPE_LOOPS;
-                    unsigned char saveLoops = state->getLoops();
-                    mode = COPYSWAPSAVE;
+                    saveLoops = state->getLoops();
+                    transition(COPYSWAPSAVE);
                 }
             } else if (mode == MIDI) {
                 // press on 1 & 2 trigger midi1 down/up
@@ -164,9 +185,9 @@ void loop() {
                     state->midi2Up();
                 }
                 if (press5) {
-                    state->toggleLoop(5);
+                    state->toggleLoop(4);
                 }
-                if(pressHold9) {
+                if(pressHold5) {
                     // transition to SAVE
                     saveType = SAVETYPE_MIDI;
                     saveMidi1 = state->getMidi1();
@@ -198,7 +219,7 @@ void loop() {
                     transition(COPYSWAPSAVE);
                 }
                 if (pressHold4) {
-                    srcPresetNum = state->getPresetNum(0);
+                    srcPresetNum = state->getPresetNum(1);
                     srcPreset = storage->getPresetByNum(srcPresetNum);
                     transition(COPYSWAPSAVE);
                 }
@@ -242,40 +263,48 @@ void loop() {
                     state->bankUp();
                 }
                 if (pressHold1 || pressHold2) {
-                    state->selectPatchByNum(srcPresetNum);
-                    transition(PRESET);
+                    // state->selectPatchByNum(srcPresetNum);
+                    transition(prevMode);
                 }
-                if (press1 || press2 || press3) {
-                    if (press1) {
-                        targetPresetNum = state->getPresetNum(0);
-                    }
-                    if (press2) {
-                        targetPresetNum = state->getPresetNum(1);
-                    }
+                if (press3 || press4 || press5) {
                     if (press3) {
-                        targetPresetNum = state->getPresetNum(2);
+                        targetPresetNum = state->getTempPresetNum(0);
+                    }
+                    if (press4) {
+                        targetPresetNum = state->getTempPresetNum(1);
+                    }
+                    if (press5) {
+                        targetPresetNum = state->getTempPresetNum(2);
                     }
                     targetPreset = storage->getPresetByNum(targetPresetNum);
 
                     if (prevMode == PRESET) {
+                        // came from PRESET means i'm either swapping or copying
                         storage->savePresetByNum(srcPreset, targetPresetNum);
                         delete srcPreset;
-                    } else if (saveType) {
+                        transition(COPYSWAPSAVEWAIT);
+                    } else if (saveType != SAVETYPE_NONE) {
+                        // came from either LIVE or MIDI, just saving to a preset
                         if (saveType == SAVETYPE_LOOPS) {
                             storage->saveLoopsToPreset(saveLoops, targetPresetNum);
+                            state->selectPatchByNum(targetPresetNum);
                         } else if (saveType == SAVETYPE_MIDI) {
                             storage->saveMidiToPreset(saveMidi1, saveMidi2, targetPresetNum);
+                            state->selectPatchByNum(targetPresetNum);
                         }
+                        saveType = SAVETYPE_NONE;
+                        transition(PRESET);
                     }
-                    transition(COPYSWAPSAVEWAIT);
                 }
             } else if (mode == COPYSWAPSAVEWAIT) {
+                // We wait to see if there is a press hold, which forces a swap
                 if (copySwapSaveStart == -1) {
                     copySwapSaveStart = millis();
                 } else if (millis() - copySwapSaveStart > 2000) {
                     state->selectPatchByNum(targetPresetNum);
                     delete targetPreset;
                     transition(PRESET);
+                    copySwapSaveStart = -1;
                 }
 
                 if (pressHold3 || pressHold4 || pressHold5) {
@@ -312,21 +341,22 @@ void loop() {
                     transition(PRESET);
                 }
             }
-            Serial.println(mode);
 
             // If state has changed
             if (state->diff(oldState)) {
                 // RENDER
                 // light up leds according to state & mode
                 int* colors = modeColors[mode];
-                long on = (( millis() - copySwapSaveStart ) / 5) % 2;
+                long on;
+                if (copySwapSaveStart != -1) {
+                    on = (( millis() - copySwapSaveStart ) / 5) % 2;
+                }
 
-                Serial.println(mode);
                 if (mode != COPYSWAPSAVEWAIT || on) {
-                    // lightgrid->setMode(colors[0], colors[1], colors[2]);
+                    lightgrid->setMode(colors[0], colors[1], colors[2]);
                 } else {
                     // flash on COPYSWAPSAVEWAIT
-                    // lightgrid->setMode(0, 0, 0);
+                    lightgrid->setMode(0, 0, 0);
                 }
 
                 // lightgrid->turnOffAll();
@@ -345,12 +375,30 @@ void loop() {
                         }
                     }
                 } else if (mode == MIDI) {
+                    if (press1 || pressed1) {
+                        ledStates[0] = true;
+                    }
+                    if (press2 || pressed2) {
+                        ledStates[1] = true;
+                    }
+                    if (press3 || pressed3) {
+                        ledStates[2] = true;
+                    }
+                    if (press4 || pressed4) {
+                        ledStates[3] = true;
+                    }
                     // light up led5 if loop 5 is active
                     loops = state->loops;
                     if((loops >> 4) & 1) {
                         ledStates[4] = true;
                     }
                 } else if (mode == PRESET) {
+                    if (press1 || pressed1) {
+                        ledStates[0] = true;
+                    }
+                    if (press2 || pressed2) {
+                        ledStates[1] = true;
+                    }
                     // light up bank leds
                     int bank = state->getBank() + 1;
                     for (i = 0; i < 4; i++) {
@@ -359,11 +407,33 @@ void loop() {
                         }
                     }
                     ledStates[state->getPatch() + 2] = true;
+                } else if (mode == BANKSEARCH) {
+                    if (press1 || pressed1) {
+                        ledStates[0] = true;
+                    }
+                    if (press2 || pressed2) {
+                        ledStates[1] = true;
+                    }
+                    // light up bank leds
+                    int bank = state->getTempBank() + 1;
+                    for (i = 0; i < 4; i++) {
+                        if((bank >> i) & 1) {
+                            ledStates[(3-i)+5] = true;
+                        }
+                    }
                 } else if (mode == LOOPER) {
-                    // nothing
+                    if (press1 || pressed1) {
+                        ledStates[0] = true;
+                    }
+                    if (press2 || pressed2) {
+                        ledStates[1] = true;
+                    }
+                    if (press3 || pressed3) {
+                        ledStates[2] = true;
+                    }
                 } else if (mode == COPYSWAPSAVE) {
                     // light up bank leds
-                    int bank = state->getBank() + 1;
+                    int bank = state->getTempBank() + 1;
                     for (i = 0; i < 4; i++) {
                         if((bank >> i) & 1) {
                             ledStates[(3-i)+5] = true;
@@ -371,7 +441,7 @@ void loop() {
                     }
                 } else if (mode == COPYSWAPSAVEWAIT) {
                     // light up bank leds
-                    int bank = state->getBank() + 1;
+                    int bank = state->getTempBank() + 1;
                     for (i = 0; i < 4; i++) {
                         if((bank >> i) & 1) {
                             ledStates[(3-i)+5] = true;

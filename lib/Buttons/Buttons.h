@@ -29,7 +29,7 @@ class Buttons
         Buttons();
         void updateStates(int num);
         bool* getStates();
-        void detectEvents(bool *presses, bool *pressHolds, bool *releases);
+        void detectEvents(bool *presses, bool *presseds, bool *pressHolds, bool *releases);
 };
 
 #endif //Buttons_h
