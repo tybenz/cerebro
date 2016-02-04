@@ -71,16 +71,24 @@ void State::midi2Down() {
 }
 
 void State::bankUp() {
-    tempBank = getBank() + 1;
+    if (tempBank == -1) {
+        tempBank = getBank() + 1;
+    } else {
+        tempBank++;
+    }
     if (tempBank > NUM_BANKS - 1) {
-        tempBank = NUM_BANKS - 1;
+        tempBank = 0;
     }
 }
 
 void State::bankDown() {
-    tempBank = getBank() - 1;
+    if (tempBank == -1) {
+        tempBank = getBank() - 1;
+    } else {
+        tempBank--;
+    }
     if (tempBank < 0) {
-        tempBank = 0;
+        tempBank = NUM_BANKS - 1;
     }
 }
 

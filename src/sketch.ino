@@ -130,21 +130,21 @@ void loop() {
             if (mode == LIVE) {
                 // press on 1-5 triggers true bypass loop toggle
                 if (press1) {
-                    state->toggleLoop(1);
+                    state->toggleLoop(0);
                 }
                 if (press2) {
-                    state->toggleLoop(2);
+                    state->toggleLoop(1);
                 }
                 if (press3) {
-                    state->toggleLoop(3);
+                    state->toggleLoop(2);
                 }
                 if (press4) {
-                    state->toggleLoop(4);
+                    state->toggleLoop(3);
                 }
                 if (press5) {
-                    state->toggleLoop(5);
+                    state->toggleLoop(4);
                 }
-                if (pressHold9) {
+                if (pressHold5) {
                     saveType = SAVETYPE_LOOPS;
                     unsigned char saveLoops = state->getLoops();
                     mode = COPYSWAPSAVE;
@@ -287,6 +287,12 @@ void loop() {
                     transition(PRESET);
                 }
             } else if (mode == BANKSEARCH) {
+                if (press1) {
+                    state->bankDown();
+                }
+                if (press2) {
+                    state->bankUp();
+                }
                 if (pressHold1 || pressHold2) {
                     // in bank search, last preset from PRESET mode is still active
                     // so just clear the temp bank and transition to preset
@@ -346,10 +352,10 @@ void loop() {
                     }
                 } else if (mode == PRESET) {
                     // light up bank leds
-                    int bank = state->getBank();
-                    for (i = 0; i< 2; i++) {
+                    int bank = state->getBank() + 1;
+                    for (i = 0; i < 4; i++) {
                         if((bank >> i) & 1) {
-                            ledStates[i+5] = true;
+                            ledStates[(3-i)+5] = true;
                         }
                     }
                     ledStates[state->getPatch() + 2] = true;
@@ -357,19 +363,18 @@ void loop() {
                     // nothing
                 } else if (mode == COPYSWAPSAVE) {
                     // light up bank leds
-                    int bank = state->getBank();
-                    for (i = 3; i >= 0; i--) {
+                    int bank = state->getBank() + 1;
+                    for (i = 0; i < 4; i++) {
                         if((bank >> i) & 1) {
-                            ledStates[i + 5] = true;
+                            ledStates[(3-i)+5] = true;
                         }
                     }
                 } else if (mode == COPYSWAPSAVEWAIT) {
                     // light up bank leds
-                    int bank = state->getBank();
-                    for (i = 0; i< 2; i++) {
+                    int bank = state->getBank() + 1;
+                    for (i = 0; i < 4; i++) {
                         if((bank >> i) & 1) {
-                            lightgrid->turnOnBankLed(i);
-                            ledStates[i + 5] = true;
+                            ledStates[(3-i)+5] = true;
                         }
                     }
                 }
