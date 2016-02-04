@@ -323,33 +323,36 @@ void loop() {
                     // lightgrid->setMode(0, 0, 0);
                 }
 
-                lightgrid->turnOffAll();
+                // lightgrid->turnOffAll();
 
                 unsigned char loops;
+                bool ledStates[9] = {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0
+                };
 
                 if (mode == LIVE) {
                     // light up which loops are active
                     loops = state->loops;
                     for (i = 0; i < 5; i++) {
                         if((loops >> i) & 1) {
-                            lightgrid->turnOnLed(i);
+                            ledStates[i] = true;
                         }
                     }
                 } else if (mode == MIDI) {
                     // light up led5 if loop 5 is active
                     loops = state->loops;
                     if((loops >> 4) & 1) {
-                        lightgrid->turnOnLed(4);
+                        ledStates[4] = true;
                     }
                 } else if (mode == PRESET) {
                     // light up bank leds
                     int bank = state->getBank();
                     for (i = 0; i< 2; i++) {
                         if((bank >> i) & 1) {
-                            lightgrid->turnOnLed(i, 5);
+                            ledStates[i+5] = true;
                         }
                     }
-                    lightgrid->turnOnLed(state->getPatch(), 2);
+                    ledStates[state->getPatch() + 2] = true;
                 } else if (mode == LOOPER) {
                     // nothing
                 } else if (mode == COPYSWAPSAVE) {
@@ -357,7 +360,7 @@ void loop() {
                     int bank = state->getBank();
                     for (i = 3; i >= 0; i--) {
                         if((bank >> i) & 1) {
-                            lightgrid->turnOnBankLed(i);
+                            ledStates[i + 5] = true;
                         }
                     }
                 } else if (mode == COPYSWAPSAVEWAIT) {
@@ -366,9 +369,11 @@ void loop() {
                     for (i = 0; i< 2; i++) {
                         if((bank >> i) & 1) {
                             lightgrid->turnOnBankLed(i);
+                            ledStates[i + 5] = true;
                         }
                     }
                 }
+                lightgrid->setLeds(ledStates);
 
                 // send midi program changes for midi1 and midi2
                 // trigger active loops, deactivate inactive loops
