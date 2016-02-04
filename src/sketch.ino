@@ -25,6 +25,7 @@ Buttons* buttons = new Buttons();
 
 int prevMode = 0;
 int mode = 0;
+bool firstLoop = true;
 
 int modeButtonPin = 0;
 int button1Pin    = 1;
@@ -68,8 +69,20 @@ void setup() {
     Serial.begin(9600);
     Serial.println(10000);
     pinMode(A5, INPUT_PULLUP); // sets analog pin for input
-    // read state from EEPROM
-    // set state object and render
+
+    mode = storage->getStartupMode();
+
+    unsigned char loops = storage->getStartupLoops();
+
+    int midi1 = storage->getStartupMidi1();
+    int midi2 = storage->getStartupMidi2();
+    int preset = storage->getStartupPreset();
+
+    // set state object
+    int looper[3] = {0, 0, 0};
+    state->setState(preset, midi1, midi2, loops, looper);
+
+    // initial render is taken care of in loop thanks to firstLoop
 }
 
 int oldInput = 0;
@@ -196,6 +209,8 @@ void loop() {
                 }
             } else if (mode == PRESET) {
                 // press on 1 & 2 trigger bank down/up. trigger BANKSEARCH
+                int presetNum;
+                unsigned char loops;
                 if (press1) {
                     state->bankDown();
                     transition(BANKSEARCH);
@@ -205,13 +220,19 @@ void loop() {
                     transition(BANKSEARCH);
                 }
                 if (press3) {
-                    state->selectPatch(0);
+                    presetNum = state->selectPatch(0);
+                    loops = storage->getPresetByNum(presetNum)->getLoops();
+                    state->setLoops(loops);
                 }
                 if (press4) {
-                    state->selectPatch(1);
+                    presetNum = state->selectPatch(1);
+                    loops = storage->getPresetByNum(presetNum)->getLoops();
+                    state->setLoops(loops);
                 }
                 if (press5) {
-                    state->selectPatch(2);
+                    presetNum = state->selectPatch(2);
+                    loops = storage->getPresetByNum(presetNum)->getLoops();
+                    state->setLoops(loops);
                 }
                 if (pressHold3) {
                     srcPresetNum = state->getPresetNum(0);
@@ -343,7 +364,8 @@ void loop() {
             }
 
             // If state has changed
-            if (state->diff(oldState)) {
+            if (firstLoop || state->diff(oldState)) {
+                firstLoop = false;
                 // RENDER
                 // light up leds according to state & mode
                 int* colors = modeColors[mode];

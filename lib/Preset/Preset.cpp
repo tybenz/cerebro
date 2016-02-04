@@ -1,12 +1,9 @@
 #include <Preset.h>
 
-Preset::Preset() : loops(0x00), midi1(0x00), midi2(0x00) {
-}
-
-Preset::Preset(unsigned char loops, int midi1, int midi2) {
-    loops = loops;
-    midi1 = midi1;
-    midi2 = midi2;
+Preset::Preset(unsigned char initLoops, int initMidi1, int initMidi2) {
+    loops = initLoops;
+    midi1 = initMidi1;
+    midi2 = initMidi2;
 }
 
 unsigned char Preset::getLoops() {

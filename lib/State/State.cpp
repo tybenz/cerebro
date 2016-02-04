@@ -96,16 +96,16 @@ void State::clearTempBank() {
     tempBank = -1;
 }
 
-void State::selectPatchByNum(int num) {
+int State::selectPatchByNum(int num) {
     currentPreset = num;
 }
 
-void State::selectPatch(int num) {
-    currentPreset = getBank() * PPB + num;
+int State::selectPatch(int num) {
+    selectPatchByNum(getBank() * PPB + num);
 }
 
-void State::selectPatch(int num, bool useTempBank) {
-    currentPreset = tempBank * PPB + num;
+int State::selectPatch(int num, bool useTempBank) {
+    selectPatchByNum(tempBank * PPB + num);
     clearTempBank();
 }
 
@@ -119,6 +119,10 @@ void State::deactivateLoop(int num) {
 
 void State::toggleLoop(int num) {
     loops ^= 1 << num;
+}
+
+void State::setLoops(unsigned char newLoops) {
+    loops = newLoops;
 }
 
 int State::getBank() {

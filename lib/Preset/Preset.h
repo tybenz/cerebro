@@ -2,7 +2,6 @@
 #define Preset_h
 
 #include <Arduino.h>
-#include <Shifter.h>
 
 class Preset
 {
@@ -11,7 +10,6 @@ class Preset
         int midi1;
         int midi2;
     public:
-        Preset();
         Preset(unsigned char loops, int midi1, int midi2);
         unsigned char getLoops();
         int getMidi1();

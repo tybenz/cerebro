@@ -2,7 +2,6 @@
 #define State_h
 
 #include <Arduino.h>
-#include <Shifter.h>
 
 class State
 {
@@ -27,12 +26,13 @@ class State
         void bankDown();
         void clearTempBank();
         int getTempBank();
-        void selectPatchByNum(int num);
-        void selectPatch(int num);
-        void selectPatch(int num, bool useTempBank);
+        int selectPatchByNum(int num);
+        int selectPatch(int num);
+        int selectPatch(int num, bool useTempBank);
         void activateLoop(int num);
         void deactivateLoop(int num);
         void toggleLoop(int num);
+        void setLoops(unsigned char loops);
         int getPresetNum(int num);
         int getTempPresetNum(int num);
         unsigned char getLoops();

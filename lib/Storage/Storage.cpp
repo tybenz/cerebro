@@ -6,18 +6,19 @@ Storage::Storage() {
 void Storage::saveState(int mode, State* state) {
     // first unsigned char is 5 bits of loops followed by a zero followed by 2 bits for mode
     unsigned char first = state->loops;
-    first << 0;
-    first << 1;
-    first << 1;
-    first = first & mode;
 
-    unsigned char stateToWrite[4] = {
-      first, state->midi1, state->midi2, state->currentPreset
-    };
-
-    for (int i = 0; i < 4; i++) {
-        EEPROM.write(i, stateToWrite[i]);
+    // copy first two mode bits onto bits 6 & 7 of first byte
+    if ((mode >> 0) & 1) {
+        first |= 1 << 6;
     }
+    if ((mode >> 1) & 1) {
+        first |= 1 << 7;
+    }
+
+    EEPROM.write(0, first);
+    EEPROM.write(1, state->midi1);
+    EEPROM.write(2, state->midi2);
+    EEPROM.write(3, state->currentPreset);
 }
 
 void Storage::savePresetByNum(Preset *preset, int num) {
@@ -55,4 +56,43 @@ Preset* Storage::getPresetByNum(int num) {
     Preset *preset = new Preset(readLoops, readMidi1, readMidi2);
 
     return preset;
+}
+
+unsigned char Storage::getStartupLoops() {
+    unsigned char byte = EEPROM.read(0);
+
+    // clear last two bits (mode)
+    byte &= ~(1 << 7);
+    byte &= ~(1 << 6);
+
+    return byte;
+}
+
+int Storage::getStartupMode() {
+    unsigned char byte = EEPROM.read(0);
+
+    int mode = 0;
+    // shift last 2 bits of byte 0 to get int 0-3
+    int j = 0;
+    for (int i = 6; i < 8; i++) {
+        mode |= ((byte >> i) & 1) << j;
+        j++;
+    }
+
+    return mode;
+}
+
+int Storage::getStartupMidi1() {
+    // byte 1
+    return EEPROM.read(1);
+}
+
+int Storage::getStartupMidi2() {
+    // byte 2
+    return EEPROM.read(2);
+}
+
+int Storage::getStartupPreset() {
+    // byte 3
+    return EEPROM.read(3);
 }
