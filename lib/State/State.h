@@ -14,6 +14,7 @@ class State
         unsigned char loops;
         int getBank();
         int getPatch();
+        int getPatchForPresetNum(int num);
         State();
         void setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
         bool diff(State* state);

@@ -143,6 +143,10 @@ int State::getPatch() {
     return currentPreset % PPB;
 }
 
+int State::getPatchForPresetNum(int num) {
+    return num % PPB;
+}
+
 int State::getPresetNum(int num) {
     return getBank() * PPB + num;
 }

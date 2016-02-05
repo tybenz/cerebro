@@ -52,8 +52,8 @@ int modeColors[7][3] = {
     {0, 0, 255},
     // PRESET green
     {0, 255, 0},
-    // LOOPER yellow
-    {255, 255, 0},
+    // LOOPER white
+    {255, 255, 255},
     // COPYSWAPSAVE magenta
     {255, 50, 255},
     // COPYSWAPSAVEWAIT magenta
@@ -321,7 +321,7 @@ void loop() {
                             state->selectPatchByNum(targetPresetNum);
                         }
                         saveType = SAVETYPE_NONE;
-                        transition(PRESET);
+                        transition(COPYSWAPSAVEWAIT);
                     }
                 }
             } else if (mode == COPYSWAPSAVEWAIT) {
@@ -331,6 +331,7 @@ void loop() {
                 } else if (millis() - copySwapSaveStart > 2000) {
                     state->selectPatchByNum(targetPresetNum);
                     delete targetPreset;
+                    targetPresetNum = -1;
                     transition(PRESET);
                     copySwapSaveStart = -1;
                 }
@@ -342,6 +343,7 @@ void loop() {
                     state->selectPatchByNum(targetPresetNum);
                     delete targetPreset;
                     transition(PRESET);
+                    copySwapSaveStart = -1;
                 }
             } else if (mode == BANKSEARCH) {
                 if (press1) {
@@ -475,6 +477,9 @@ void loop() {
                         if((bank >> i) & 1) {
                             ledStates[(3-i)+5] = true;
                         }
+                    }
+                    if (targetPresetNum != -1) {
+                        ledStates[state->getPatchForPresetNum(targetPresetNum) + 2] = true;
                     }
                 }
                 lightgrid->setLeds(ledStates);
