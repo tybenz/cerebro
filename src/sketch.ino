@@ -71,6 +71,7 @@ void setup() {
     pinMode(A5, INPUT_PULLUP); // sets analog pin for input
 
     mode = storage->getStartupMode();
+    Serial.println(mode);
 
     unsigned char loops = storage->getStartupLoops();
 
@@ -210,7 +211,7 @@ void loop() {
             } else if (mode == PRESET) {
                 // press on 1 & 2 trigger bank down/up. trigger BANKSEARCH
                 int presetNum;
-                unsigned char loops;
+                Preset* preset;
                 if (press1) {
                     state->bankDown();
                     transition(BANKSEARCH);
@@ -221,18 +222,24 @@ void loop() {
                 }
                 if (press3) {
                     presetNum = state->selectPatch(0);
-                    loops = storage->getPresetByNum(presetNum)->getLoops();
-                    state->setLoops(loops);
+                    preset = storage->getPresetByNum(presetNum);
+                    state->setLoops(preset->getLoops());
+                    state->setMidi1(preset->getMidi1());
+                    state->setMidi2(preset->getMidi2());
                 }
                 if (press4) {
                     presetNum = state->selectPatch(1);
-                    loops = storage->getPresetByNum(presetNum)->getLoops();
-                    state->setLoops(loops);
+                    preset = storage->getPresetByNum(presetNum);
+                    state->setLoops(preset->getLoops());
+                    state->setMidi1(preset->getMidi1());
+                    state->setMidi2(preset->getMidi2());
                 }
                 if (press5) {
                     presetNum = state->selectPatch(2);
-                    loops = storage->getPresetByNum(presetNum)->getLoops();
-                    state->setLoops(loops);
+                    preset = storage->getPresetByNum(presetNum);
+                    state->setLoops(preset->getLoops());
+                    state->setMidi1(preset->getMidi1());
+                    state->setMidi2(preset->getMidi2());
                 }
                 if (pressHold3) {
                     srcPresetNum = state->getPresetNum(0);
@@ -493,6 +500,7 @@ void nextMode() {
     if (mode > 3) {
         mode = LIVE;
     }
+    writableMode = mode;
 }
 
 void transition(int newMode) {

@@ -41,6 +41,8 @@ class State
         void activateLooperControl(int num);
         void deactivateLooperControl(int num);
         void neutralizeLooperControl(int num);
+        void setMidi1(int num);
+        void setMidi2(int num);
 };
 
 #endif //State_h

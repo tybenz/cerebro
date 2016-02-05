@@ -174,3 +174,11 @@ void State::deactivateLooperControl(int num) {
 void State::neutralizeLooperControl(int num) {
     looper[num] = -1;
 }
+
+void State::setMidi1(int num) {
+    midi1 = num;
+}
+
+void State::setMidi2(int num) {
+    midi2 = num;
+}
