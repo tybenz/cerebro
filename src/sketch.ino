@@ -3,11 +3,14 @@
 #include <State.h>
 #include <Buttons.h>
 #include <Preset.h>
+#include <SoftwareSerial.h>
 
 LightGrid* lightgrid;
 Storage* storage = new Storage();
 State* state = new State();
 Buttons* buttons = new Buttons();
+
+SoftwareSerial mySerial(8, 7); // RX, TX
 
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 #define LIVE 0
@@ -67,9 +70,17 @@ int modeColors[7][3] = {
     {0, 255, 0}
 };
 
+void sendMidi(int aMidiCommand, int aData1) {
+    mySerial.write(aMidiCommand);
+    mySerial.write(aData1);
+    delay(100);
+}
+
 int writableMode = 0;
 
 void setup() {
+    mySerial.begin(31250);
+
     lightgrid = new LightGrid(3, 4, 5, 6);
     Serial.begin(9600);
     Serial.println(10000);
@@ -91,37 +102,42 @@ void setup() {
     // initial render is taken care of in loop thanks to firstLoop
 }
 
-int oldInput = 0;
-
 void loop() {
     int input = analogRead(A5); // get the analog value
-    if (input != oldInput) {
-        delay(20);
-        int input2 = analogRead(A5);
-        if (input - input2 < 20 && input - input2 > -20) {
-            oldInput = input;
-            int i = 0;
-            State* oldState = state->copy();
+    if (input < 900) {
+        Serial.println("Button1:");
+        Serial.println(input);
+    }
+    delay(30);
+    int input2 = analogRead(A5);
+    if (input2 < 900) {
+        Serial.println("Button2:");
+        Serial.println(input);
+    }
+    if (input - input2 < 40 && input - input2 > -40) {
+        int i = 0;
+        State* oldState = state->copy();
 
-            buttons->updateStates(input);
+        buttons->updateStates(input);
 
-            for (int i = 0; i < BUTTON_COUNT; i++) {
-                press[i] = false;
-                pressed[i] = false;
-                pressHold[i] = false;
-                release[i] = false;
-            }
-            buttons->detectEvents(press, pressed, pressHold, release);
+        for (int i = 0; i < BUTTON_COUNT; i++) {
+            press[i] = false;
+            pressed[i] = false;
+            pressHold[i] = false;
+            release[i] = false;
+        }
+        buttons->detectEvents(press, pressed, pressHold, release);
 
-            update();
+        update();
 
-            // If state has changed
-            if (firstLoop || state->diff(oldState)) {
-                firstLoop = false;
-                render();
+        // If state has changed
+        Serial.println(firstLoop);
+        Serial.println(state->diff(oldState));
+        if (firstLoop || state->diff(oldState)) {
+            firstLoop = false;
+            render();
 
-                storage->saveState(writableMode, state);
-            }
+            storage->saveState(writableMode, state);
         }
     }
 }
@@ -362,6 +378,7 @@ void update() {
 }
 
 void render() {
+    // Serial.println("RENDER");
     int* colors = modeColors[mode];
     int i;
     long on;
@@ -473,6 +490,15 @@ void render() {
     lightgrid->writeShifter();
 
     // send midi program changes for midi1 and midi2
+    int program = state->getMidi1();
+    // Serial.println("SEND MIDI 1");
+    // Serial.println(program);
+    sendMidi(0xC1, program);
+
+    program = state->getMidi2();
+    // Serial.println("SEND MIDI 2");
+    // Serial.println(program);
+    sendMidi(0xC0, program);
 
     // trigger active loops, deactivate inactive loops
 
