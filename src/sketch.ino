@@ -131,8 +131,7 @@ void loop() {
         update();
 
         // If state has changed
-        Serial.println(firstLoop);
-        Serial.println(state->diff(oldState));
+        Serial.print("");
         if (firstLoop || state->diff(oldState)) {
             firstLoop = false;
             render();
