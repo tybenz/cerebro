@@ -102,19 +102,18 @@ void setup() {
     // initial render is taken care of in loop thanks to firstLoop
 }
 
+int debounceDelay = 30;
+int oldInput = 0;
+long lastReadTime = 0;
+
 void loop() {
     int input = analogRead(A5); // get the analog value
-    if (input < 900) {
-        Serial.println("Button1:");
-        Serial.println(input);
+
+    if (input != oldInput) {
+        lastReadTime = millis();
     }
-    delay(30);
-    int input2 = analogRead(A5);
-    if (input2 < 900) {
-        Serial.println("Button2:");
-        Serial.println(input);
-    }
-    if (input - input2 < 40 && input - input2 > -40) {
+
+    if ((millis() - lastReadTime) > debounceDelay) {
         int i = 0;
         State* oldState = state->copy();
 
@@ -131,14 +130,14 @@ void loop() {
         update();
 
         // If state has changed
-        Serial.print("");
-        if (firstLoop || state->diff(oldState)) {
+        if (firstLoop || state->diff(oldState) || prevMode != mode) {
             firstLoop = false;
             render();
 
             storage->saveState(writableMode, state);
         }
     }
+    oldInput = input;
 }
 
 void nextMode() {
