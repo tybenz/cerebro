@@ -107,34 +107,34 @@ int oldInput = 0;
 long lastReadTime = 0;
 
 void loop() {
-    int input = analogRead(A5); // get the analog value
-
+    int input = analogRead(A5);
     if (input != oldInput) {
-        lastReadTime = millis();
-    }
+        delay(20);
+        int input2 = analogRead(A5);
+        if (input - input2 < 20 && input - input2 > -20) {
+            oldInput = input;
+            int i = 0;
+            State* oldState = state->copy();
 
-    if ((millis() - lastReadTime) > debounceDelay) {
-        int i = 0;
-        State* oldState = state->copy();
+            buttons->updateStates(input);
 
-        buttons->updateStates(input);
-
-        for (int i = 0; i < BUTTON_COUNT; i++) {
-            press[i] = false;
-            pressed[i] = false;
-            pressHold[i] = false;
-            release[i] = false;
-        }
-        buttons->detectEvents(press, pressed, pressHold, release);
+            for (int i = 0; i < BUTTON_COUNT; i++) {
+                press[i] = false;
+                pressed[i] = false;
+                pressHold[i] = false;
+                release[i] = false;
+            }
+            buttons->detectEvents(press, pressed, pressHold, release);
 
         update();
 
-        // If state has changed
-        if (firstLoop || state->diff(oldState) || prevMode != mode) {
-            firstLoop = false;
-            render();
+            // If state has changed
+            if (firstLoop || state->diff(oldState) || prevMode != mode) {
+                firstLoop = false;
+                render();
 
-            storage->saveState(writableMode, state);
+                storage->saveState(writableMode, state);
+            }
         }
     }
     oldInput = input;
