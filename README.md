@@ -24,44 +24,41 @@
 - [ ] performance improvements (only send serial/midi on change)
 
 ## EVENTS
-Press (P): When HIGH, wait 50 ms for no other adjacent switch, trigger, trigger P
-Double Press (DP): if two adjacents pressed within 50ms, trigger DP (not currently possible)
-Press+Hold (PH): Wait 1sec, then cancel last "press", trigger PH
-For a press, keep last state for 1sec, if it's a PH, jump back to that state and perform the PH
+- Press (P): When HIGH, wait 50 ms for no other adjacent switch, trigger, trigger P
+- Double Press (DP): if two adjacents pressed within 50ms, trigger DP (not currently possible)
+- Press+Hold (PH): Wait 1sec, then cancel last "press", trigger PH
+- For a press, keep last state for 1sec, if it's a PH, jump back to that state and perform the PH
 
 
 ## LIVE (red)
-1-5 patches
-PH5 -> SAVE
-
+- 1-5 patches
+- PH5 -> SAVE
 
 ## MIDI (blue)
-1 & 2 control Zoom
-3 & 4 control Nova Drive
-5 controls bypass loop #1
-PH5 -> SAVE
+- 1 & 2 control Zoom
+- 3 & 4 control Nova Drive
+- 5 controls bypass loop #1
+- PH5 -> SAVE
 
+## PRESET (green)
+- 1 bank up
+- 2 bank down
+- Bank search mode flashing bank leds - select 1-5 to confirm
+- PH1/PH2 exits "bank search mode" (returns to previous bank)
+- PH 3 4 5 -> COPYSWAP
 
-## LOOPER (green)
-1 2 & 3 control the looper bank up/down/undo
-
-
-## PRESET (yellow)
-1 bank up
-2 bank down
-Bank search mode flashing bank leds - select 1-5 to confirm
-PH1/PH2 exits "bank search mode" (returns to previous bank)
-PH 3 4 5 -> COPYSWAP
+## LOOPER (white)
+- 1 2 & 3 control the looper bank up/down/undo
 
 ## COPYSWAPSAVE (purple)
-1 bank down
-2 bank up
-PH 1 or 2 PREVSTATE
-3 4 or 5 to copy/save transition to COPYSWAPSAVEWAIT (flash 3, 4, 5 LED)
+- 1 bank down
+- 2 bank up
+- PH 1 or 2 PREVSTATE
+- 3 4 or 5 to copy/save transition to COPYSWAPSAVEWAIT (flash 3, 4, 5 LED)
 
 ## COPYSWAPSAVEWAIT (purple flashing)
-PH 3 4 or 5 to swap/save (will undo previous copy/overwrite) then go back to PRESET with newPreset
-if 1.5sec pass and no PH, go to PRESET with newPreset
+- PH 3 4 or 5 to swap/save (will undo previous copy/overwrite) then go back to PRESET with newPreset
+- if 1.5sec pass and no PH, go to PRESET with newPreset
 
 ## STARTUP
 - reset all relays
