@@ -7,12 +7,26 @@ CEREBRO
 |  1  <6>  2  <7>  3  <8>  4  <9>  5  |
 ---------------------------------------
 
+TODO
+----
 
+- [ ] bypass loop relay test
+- [ ] footswitch relay test
+- [ ] usb midi test
+- [ ] ableton midi test
+- [ ] soldering
+  - [ ] buttons
+  - [ ] leds
+  - [ ] true bypass relays
+  - [ ] footswitch relays
+  - [ ] usb connectors
+  - [ ] midi
+- [ ] performance improvements (only send serial/midi on change)
 
 EVENTS
 ------
 Press (P): When HIGH, wait 50 ms for no other adjacent switch, trigger, trigger P
-Double Press (DP): if two adjacents pressed within 50ms, trigger DP
+Double Press (DP): if two adjacents pressed within 50ms, trigger DP (not currently possible)
 Press+Hold (PH): Wait 1sec, then cancel last "press", trigger PH
 For a press, keep last state for 1sec, if it's a PH, jump back to that state and perform the PH
 
