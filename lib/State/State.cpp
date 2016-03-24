@@ -4,14 +4,15 @@ int PPB = 3; // patches per bank
 int NUM_BANKS = 15; // binary 3 digits (not zero)
 int MAX_PRESETS = PPB * NUM_BANKS;
 
-State::State() : currentPreset(0), tempBank(-1), midi1(0x00), midi2(0x00), loops(0x00) {
+State::State() : currentPreset(0), currentSetlistPreset(0), tempBank(-1), setlistTempBank(-1), midi1(0x00), midi2(0x00), loops(0x00) {
     for (int i = 0; i < 3; i++) {
         looper[i] = 0;
     }
 }
 
-void State::setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]) {
+void State::setState(int newPreset, int newSetlistPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]) {
     currentPreset = newPreset;
+    currentSetlistPreset = newSetlistPreset;
     midi1 = newMidi1;
     midi2 = newMidi2;
     loops = newLoops;
@@ -22,6 +23,9 @@ void State::setState(int newPreset, int newMidi1, int newMidi2, unsigned char ne
 
 bool State::diff(State* state) {
     if (currentPreset != state->currentPreset) {
+        return true;
+    }
+    if (currentSetlistPreset != state->currentSetlistPreset) {
         return true;
     }
     if (midi1 != state->midi1) {
@@ -38,7 +42,7 @@ bool State::diff(State* state) {
 
 State* State::copy() {
     State* newState;
-    newState->setState(currentPreset, midi1, midi2, loops, looper);
+    newState->setState(currentPreset, currentSetlistPreset, midi1, midi2, loops, looper);
     return newState;
 }
 
@@ -104,6 +108,32 @@ void State::clearTempBank() {
     tempBank = -1;
 }
 
+void State::setlistBankUp() {
+    if (setlistTempBank == -1) {
+        setlistTempBank = getSetlistBank() + 1;
+    } else {
+        setlistTempBank++;
+    }
+    if (setlistTempBank > NUM_BANKS - 1) {
+        setlistTempBank = 0;
+    }
+}
+
+void State::setlistBankDown() {
+    if (setlistTempBank == -1) {
+        setlistTempBank = getSetlistBank() - 1;
+    } else {
+        setlistTempBank--;
+    }
+    if (setlistTempBank < 0) {
+        setlistTempBank = NUM_BANKS - 1;
+    }
+}
+
+void State::clearSetlistTempBank() {
+    setlistTempBank = -1;
+}
+
 int State::selectPatchByNum(int num) {
     currentPreset = num;
 }
@@ -113,8 +143,21 @@ int State::selectPatch(int num) {
 }
 
 int State::selectPatch(int num, bool useTempBank) {
-    selectPatchByNum(tempBank * PPB + num);
+    selectPatchByNum(setlistTempBank * PPB + num);
     clearTempBank();
+}
+
+int State::selectSetlistPatchByNum(int num) {
+    currentPreset = num;
+}
+
+int State::selectSetlistPatch(int num) {
+    selectSetlistPatchByNum(getSetlistBank() * PPB + num);
+}
+
+int State::selectSetlistPatch(int num, bool useTempBank) {
+    selectSetlistPatchByNum(setlistTempBank * PPB + num);
+    clearSetlistTempBank();
 }
 
 void State::activateLoop(int num) {
@@ -138,11 +181,24 @@ int State::getBank() {
     return currentPreset / PPB;
 }
 
+int State::getSetlistBank() {
+    /* return currentPreset / PPB; */
+    return currentSetlistPreset / PPB;
+}
+
 int State::getTempBank() {
     if (tempBank == -1) {
         return getBank();
     } else {
         return tempBank;
+    }
+}
+
+int State::getSetlistTempBank() {
+    if (setlistTempBank == -1) {
+        return getSetlistBank();
+    } else {
+        return setlistTempBank;
     }
 }
 
@@ -193,4 +249,16 @@ void State::setMidi1(int num) {
 
 void State::setMidi2(int num) {
     midi2 = num;
+}
+
+void State::abletonPlay() {
+}
+
+void State::abletonUp() {
+}
+
+void State::abletonStop() {
+}
+
+void State::abletonPlay(int num) {
 }

@@ -22,6 +22,8 @@
   - [ ] usb connectors
   - [ ] midi
 - [ ] performance improvements (only send serial/midi on change)
+- [ ] ableton mode
+- [ ] setlist mode
 
 ## EVENTS
 - Press (P): When HIGH, wait 50 ms for no other adjacent switch, trigger, trigger P
@@ -49,6 +51,21 @@
 
 ## LOOPER (white)
 - 1 2 & 3 control the looper bank up/down/undo
+
+## ABLETON (yellow)
+- 1 play
+- 3 up
+- 5 stop
+
+## SETLIST (yellow)
+- 1 bank up
+- 2 bank down
+- Bank search mode flashing bank leds - select 1-5 to confirm
+- tap mode does ableton stop
+- 3, 4, 5 select patch (switch to preset, start pads)
+- second tap of 3, 4, 5 trigger ableton loop
+- 3, 4, 5 on a setlist preset with no ableton data will not change ableton
+- PH mode goes back to previous mode
 
 ## COPYSWAPSAVE (purple)
 - 1 bank down

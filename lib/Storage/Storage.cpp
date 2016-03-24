@@ -58,6 +58,19 @@ Preset* Storage::getPresetByNum(int num) {
     return preset;
 }
 
+SetlistPreset* Storage::getSetlistPresetByNum(int num) {
+    int base = 4 + ( 3 * 16 );
+    base += num;
+
+    int readPreset   = EEPROM.read(base);
+    int readAbleton1 = EEPROM.read(base + 1);
+    int readAbleton2 = EEPROM.read(base + 2);
+
+    SetlistPreset *setlistPreset = new SetlistPreset(readPreset, readAbleton1, readAbleton2);
+
+    return setlistPreset;
+}
+
 unsigned char Storage::getStartupLoops() {
     unsigned char byte = EEPROM.read(0);
 

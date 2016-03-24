@@ -3,6 +3,7 @@
 #include <State.h>
 #include <Buttons.h>
 #include <Preset.h>
+#include <SetlistPreset.h>
 #include <SoftwareSerial.h>
 
 LightGrid* lightgrid;
@@ -17,9 +18,16 @@ SoftwareSerial mySerial(8, 7); // RX, TX
 #define MIDI 1
 #define PRESET 2
 #define LOOPER 3
-#define COPYSWAPSAVE 4
-#define COPYSWAPSAVEWAIT 5
-#define BANKSEARCH 6
+#define ABLETON 4
+#define NUM_WRITEABLE_MODES 4
+#define SETLIST 5
+#define COPYSWAPSAVE 6
+#define COPYSWAPSAVEWAIT 7
+#define BANKSEARCH 8
+#define SETLISTBANKSEARCH 9
+#define SETLISTPRESETBUILD1 10
+#define SETLISTPRESETBUILD2 11
+#define SETLISTSAVE 12
 #define SAVETYPE_NONE -1
 #define SAVETYPE_LOOPS 0
 #define SAVETYPE_MIDI 1
@@ -28,6 +36,7 @@ SoftwareSerial mySerial(8, 7); // RX, TX
 
 int prevMode = 0;
 int mode = 0;
+int onePress = -1;
 bool firstLoop = true;
 
 int modeButtonPin = 0;
@@ -53,7 +62,7 @@ bool pressed[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 bool pressHold[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 bool release[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-int modeColors[7][3] = {
+int modeColors[13][3] = {
     // LIVE red
     {255, 0, 0},
     // MIDI blue
@@ -62,11 +71,23 @@ int modeColors[7][3] = {
     {0, 255, 0},
     // LOOPER white
     {255, 255, 255},
+    // ABLETON yellow
+    {0, 255, 255},
+    // SETLIST yellow
+    {0, 255, 255},
     // COPYSWAPSAVE magenta
     {255, 50, 255},
     // COPYSWAPSAVEWAIT magenta
     {255, 50, 255},
     // BANKSEARCH green
+    {0, 255, 0},
+    // SETLISTBANKSEARCH green
+    {0, 255, 0},
+    // SETLISTPRESETBUILD1 green
+    {0, 255, 0},
+    // SETLISTPRESETBUILD2 green
+    {0, 255, 0},
+    // SETLISTSAVE green
     {0, 255, 0}
 };
 
@@ -94,10 +115,11 @@ void setup() {
     int midi1 = storage->getStartupMidi1();
     int midi2 = storage->getStartupMidi2();
     int preset = storage->getStartupPreset();
+    int setlistPreset = 0;
 
     // set state object
     int looper[3] = {0, 0, 0};
-    state->setState(preset, midi1, midi2, loops, looper);
+    state->setState(preset, setlistPreset, midi1, midi2, loops, looper);
 
     // initial render is taken care of in loop thanks to firstLoop
 }
@@ -143,7 +165,7 @@ void loop() {
 void nextMode() {
     prevMode = mode;
     mode++;
-    if (mode > 3) {
+    if (mode > NUM_WRITEABLE_MODES) {
         mode = LIVE;
     }
     writableMode = mode;
@@ -151,7 +173,8 @@ void nextMode() {
 
 void transition(int newMode) {
     prevMode = mode;
-    if (newMode < 4) {
+    if (newMode < COPYSWAPSAVEWAIT) {
+        // writable modes are LIVE, MIDI, PRESET, LOOPER, ABLETON, and SETLIST
         writableMode = newMode;
     }
     mode = newMode;
@@ -160,8 +183,19 @@ void transition(int newMode) {
 void update() {
     // UPDATE STATE
     if (press[0]) {
+        if (mode <= ABLETON)
         // cycle through modes
         nextMode();
+        onePress = -1;
+    }
+    if (pressHold[0]) {
+        if (mode == SETLIST) {
+            transition(prevMode);
+            onePress = -1;
+        } else if (mode <= ABLETON) {
+            transition(SETLIST);
+            onePress = -1;
+        }
     }
 
     if (mode == LIVE) {
@@ -284,6 +318,106 @@ void update() {
             // set relay low
             state->deactivateLooperControl(2);
         }
+    } else if (mode == ABLETON) {
+        if (press[1]) {
+            state->abletonPlay();
+        }
+        if (press[3]) {
+            state->abletonUp();
+        }
+        if (press[5]) {
+            state->abletonStop();
+        }
+    } else if (mode == SETLIST) {
+        // press on 1 & 2 trigger bank down/up. trigger SETLISTBANKSEARCH
+        int presetNum;
+        int setlistPresetNum;
+        Preset* preset;
+        SetlistPreset* setlistPreset;
+        if (press[1]) {
+            state->setlistBankDown();
+            transition(SETLISTBANKSEARCH);
+            onePress = -1;
+        }
+        if (press[2]) {
+            state->setlistBankUp();
+            transition(SETLISTBANKSEARCH);
+            onePress = -1;
+        }
+        if (press[3]) {
+            // get setlist preset
+            setlistPresetNum = state->selectSetlistPatch(0);
+            setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
+            if (onePress = 3) {
+                // play ableton loop
+                state->abletonPlay(setlistPreset->getAbleton2());
+            } else {
+                onePress = 3;
+
+                // get guitar preset
+                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                preset = storage->getPresetByNum(presetNum);
+                // activate guitar preset
+                state->setLoops(preset->getLoops());
+                state->setMidi1(preset->getMidi1());
+                state->setMidi2(preset->getMidi2());
+                // play ableton pad
+                state->abletonPlay(setlistPreset->getAbleton1());
+            }
+        }
+        if (press[4]) {
+            // get setlist preset
+            setlistPresetNum = state->selectSetlistPatch(1);
+            setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
+            if (onePress = 4) {
+                // play ableton loop
+                state->abletonPlay(setlistPreset->getAbleton2());
+            } else {
+                onePress = 4;
+
+                // get guitar preset
+                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                preset = storage->getPresetByNum(presetNum);
+                // activate guitar preset
+                state->setLoops(preset->getLoops());
+                state->setMidi1(preset->getMidi1());
+                state->setMidi2(preset->getMidi2());
+                // play ableton pad
+                state->abletonPlay(setlistPreset->getAbleton1());
+            }
+        }
+        if (press[5]) {
+            // get setlist preset
+            setlistPresetNum = state->selectSetlistPatch(2);
+            setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
+            if (onePress = 5) {
+                // play ableton loop
+                state->abletonPlay(setlistPreset->getAbleton2());
+            } else {
+                onePress = 5;
+
+                // get guitar preset
+                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                preset = storage->getPresetByNum(presetNum);
+                // activate guitar preset
+                state->setLoops(preset->getLoops());
+                state->setMidi1(preset->getMidi1());
+                state->setMidi2(preset->getMidi2());
+                // play ableton pad
+                state->abletonPlay(setlistPreset->getAbleton1());
+            }
+        }
+        if (pressHold[3]) {
+            // enter SETLISTPRESETBUILD1 mode
+        }
+        // nothing for pressHold 4
+        if (pressHold[5]) {
+            // check state
+            // if favorite is active
+            //   switch back to guitar preset for active setlist preset
+            // else
+            //   activate favorite guitar preset
+        }
     } else if (mode == COPYSWAPSAVE) {
         // when set, tempBank should be set to current bank
         if (press[1]) {
@@ -348,6 +482,8 @@ void update() {
             copySwapSaveStart = -1;
         }
     } else if (mode == BANKSEARCH) {
+        int presetNum;
+        Preset* preset;
         if (press[1]) {
             state->bankDown();
         }
@@ -361,17 +497,60 @@ void update() {
             transition(PRESET);
         }
         if (press[3]) {
-            state->selectPatch(0, true);
+            presetNum = state->selectPatch(0, true);
+            preset = storage->getPresetByNum(presetNum);
+            state->setLoops(preset->getLoops());
+            state->setMidi1(preset->getMidi1());
+            state->setMidi2(preset->getMidi2());
             transition(PRESET);
         }
         if (press[4]) {
-            state->selectPatch(1, true);
+            presetNum = state->selectPatch(1, true);
+            preset = storage->getPresetByNum(presetNum);
+            state->setLoops(preset->getLoops());
+            state->setMidi1(preset->getMidi1());
+            state->setMidi2(preset->getMidi2());
             transition(PRESET);
         }
         if (press[5]) {
-            state->selectPatch(2, true);
+            presetNum = state->selectPatch(2, true);
+            preset = storage->getPresetByNum(presetNum);
+            state->setLoops(preset->getLoops());
+            state->setMidi1(preset->getMidi1());
+            state->setMidi2(preset->getMidi2());
             transition(PRESET);
         }
+    } else if (mode == SETLISTBANKSEARCH) {
+        if (press[1]) {
+            state->setlistBankDown();
+        }
+        if (press[2]) {
+            state->setlistBankUp();
+        }
+        if (pressHold[1] || pressHold[2]) {
+            // in bank search, last preset from PRESET mode is still active
+            // so just clear the temp bank and transition to preset
+            state->clearSetlistTempBank();
+            transition(SETLIST);
+        }
+        if (press[3]) {
+            state->selectSetlistPatch(0, true);
+            transition(SETLIST);
+        }
+        if (press[4]) {
+            state->selectSetlistPatch(1, true);
+            transition(SETLIST);
+        }
+        if (press[5]) {
+            state->selectSetlistPatch(2, true);
+            transition(SETLIST);
+        }
+    } else if (mode == SETLISTPRESETBUILD1) {
+        // user chooses a guitar preset
+    } else if (mode == SETLISTPRESETBUILD2) {
+        // user chooses an ableton scene number
+    } else if (mode == SETLISTSAVE) {
+        // user chooses which bank + patch to save newly created preset on
     }
 }
 

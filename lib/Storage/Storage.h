@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <Preset.h>
+#include <SetlistPreset.h>
 #include <State.h>
 
 class Storage
@@ -15,6 +16,7 @@ class Storage
         void saveLoopsToPreset(unsigned char loops, int num);
         void saveMidiToPreset(int midi1, int midi2, int num);
         Preset* getPresetByNum(int num);
+        SetlistPreset* getSetlistPresetByNum(int num);
         unsigned char getStartupLoops();
         int getStartupMode();
         int getStartupMidi1();
