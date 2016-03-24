@@ -59,7 +59,7 @@ Preset* Storage::getPresetByNum(int num) {
 }
 
 SetlistPreset* Storage::getSetlistPresetByNum(int num) {
-    int base = 4 + ( 3 * 16 );
+    int base = 4 + ( 3 * 15 );
     base += num;
 
     int readPreset   = EEPROM.read(base);
