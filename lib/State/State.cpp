@@ -43,7 +43,7 @@ bool State::diff(State* state) {
 
 State* State::copy() {
     State* newState;
-    newState->setState(currentPreset, currentSetlistPreset, midi1, midi2, loops, looper);
+    newState->setState(currentPreset, currentSetlistPreset, midi1, midi2, currentAbleton, loops, looper);
     return newState;
 }
 
@@ -208,6 +208,10 @@ int State::getPatch() {
     return currentPreset % PPB;
 }
 
+int State::getSetlistPatch() {
+    return currentSetlistPreset % PPB;
+}
+
 int State::getPatchForPresetNum(int num) {
     return num % PPB;
 }
@@ -269,15 +273,15 @@ void State::abletonPlay(int num) {
 }
 
 void State::abletonSelectUp() {
-    ableton++;
-    if (ableton > 15) {
-        ableton = 15;
+    currentAbleton++;
+    if (currentAbleton > 15) {
+        currentAbleton = 15;
     }
 }
 
 void State::abletonSelectDown() {
-    if (ableton < 1) {
-    ableton--;
-        ableton = 1;
+    if (currentAbleton < 1) {
+    currentAbleton--;
+        currentAbleton = 1;
     }
 }

@@ -19,8 +19,9 @@ class State
         int getSetlistBank();
         int getPatch();
         int getPatchForPresetNum(int num);
+        int getSetlistPatch();
         State();
-        void setState(int newPreset, int newSetlistPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
+        void setState(int newPreset, int newSetlistPreset, int newMidi1, int newMidi2, int ableton, unsigned char newLoops, int newLooper[]);
         bool diff(State* state);
         State* copy();
         void midi1Up();

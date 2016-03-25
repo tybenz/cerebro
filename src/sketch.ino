@@ -624,7 +624,7 @@ void update() {
             transition(prevMode);
         }
         if (pressHold[5]) {
-            buildingSetlistPreset->setAbleton1(state->ableton);
+            buildingSetlistPreset->setAbleton1(state->currentAbleton);
             transition(SETLISTSAVE);
         }
     } else if (mode == SETLISTSAVE) {
@@ -651,9 +651,9 @@ void update() {
                 targetSetlistPresetNum = state->getTempSetlistPresetNum(2);
             }
 
-            storage->savePresetNumToSetlistPreset(buildingSetlistPreset->getPrestNum(), targetSetlistPresetNum);
-            storage->saveAbleton1ToSetlistPreset(buildingSetlistPreset->ableton1(), targetSetlistPresetNum);
-            storage->saveAbleton2ToSetlistPreset(buildingSetlistPreset->ableton2(), targetSetlistPresetNum);
+            storage->savePresetNumToSetlistPreset(buildingSetlistPreset->getPresetNum(), targetSetlistPresetNum);
+            storage->saveAbleton1ToSetlistPreset(buildingSetlistPreset->getAbleton1(), targetSetlistPresetNum);
+            storage->saveAbleton2ToSetlistPreset(buildingSetlistPreset->getAbleton2(), targetSetlistPresetNum);
 
             transition(SETLISTSAVEWAIT);
         }
@@ -679,11 +679,14 @@ void render() {
         on = (( millis() - copySwapSaveStart ) / 5) % 2;
     }
 
-    if (mode != COPYSWAPSAVEWAIT || on) {
-        lightgrid->setMode(colors[0], colors[1], colors[2]);
+    if (mode == COPYSWAPSAVEWAIT || mode == SETLISTSAVEWAIT) {
+        if (on) {
+            lightgrid->setMode(colors[0], colors[1], colors[2]);
+        } else {
+            lightgrid->setMode(0, 0, 0);
+        }
     } else {
-        // flash on COPYSWAPSAVEWAIT
-        lightgrid->setMode(0, 0, 0);
+        lightgrid->setMode(colors[0], colors[1], colors[2]);
     }
 
     // lightgrid->turnOffAll();
@@ -758,6 +761,22 @@ void render() {
         if (press[3] || pressed[3]) {
             ledStates[2] = true;
         }
+    } else if (mode == ABLETON) {
+    } else if (mode == SETLIST) {
+        if (press[1] || pressed[1]) {
+            ledStates[0] = true;
+        }
+        if (press[2] || pressed[2]) {
+            ledStates[1] = true;
+        }
+        // light up bank leds
+        int bank = state->getSetlistBank() + 1;
+        for (i = 0; i < 4; i++) {
+            if((bank >> i) & 1) {
+                ledStates[(3-i)+5] = true;
+            }
+        }
+        ledStates[state->getSetlistPatch() + 2] = true;
     } else if (mode == COPYSWAPSAVE) {
         // light up bank leds
         int bank = state->getTempBank() + 1;
@@ -777,6 +796,49 @@ void render() {
         if (targetPresetNum != -1) {
             ledStates[state->getPatchForPresetNum(targetPresetNum) + 2] = true;
         }
+    } else if (mode == SETLISTPRESETBUILD1) {
+        if (press[1] || pressed[1]) {
+            ledStates[0] = true;
+        }
+        if (press[2] || pressed[2]) {
+            ledStates[1] = true;
+        }
+        // light up bank leds
+        int bank = state->getTempBank() + 1;
+        for (i = 0; i < 4; i++) {
+            if((bank >> i) & 1) {
+                ledStates[(3-i)+5] = true;
+            }
+        }
+    } else if (mode == SETLISTPRESETBUILD2) {
+        if (press[1] || pressed[1]) {
+            ledStates[0] = true;
+        }
+        if (press[2] || pressed[2]) {
+            ledStates[1] = true;
+        }
+        // light up bank leds as binary representation of state->ableton
+        int bank = state->currentAbleton;
+        for (i = 0; i < 4; i++) {
+            if((bank >> i) & 1) {
+                ledStates[(3-i)+5] = true;
+            }
+        }
+    } else if (mode == SETLISTSAVE || mode == SETLISTSAVEWAIT) {
+        if (press[1] || pressed[1]) {
+            ledStates[0] = true;
+        }
+        if (press[2] || pressed[2]) {
+            ledStates[1] = true;
+        }
+        // light up bank leds
+        int bank = state->getSetlistBank() + 1;
+        for (i = 0; i < 4; i++) {
+            if((bank >> i) & 1) {
+                ledStates[(3-i)+5] = true;
+            }
+        }
+        ledStates[state->getSetlistPatch() + 2] = true;
     }
     lightgrid->setLeds(ledStates);
 
