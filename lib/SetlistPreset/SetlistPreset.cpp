@@ -17,3 +17,15 @@ int SetlistPreset::getAbleton1() {
 int SetlistPreset::getAbleton2() {
     return ableton2;
 }
+
+void SetlistPreset::setPresetNum(int num) {
+    presetNum = num;
+}
+
+void SetlistPreset::setAbleton1(int num) {
+    ableton1 = num;
+}
+
+void SetlistPreset::setAbleton2(int num) {
+    ableton2 = num;
+}

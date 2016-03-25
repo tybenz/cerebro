@@ -10,6 +10,7 @@ class State
         int currentSetlistPreset;
         int tempBank;
         int setlistTempBank;
+        int currentAbleton;
         int midi1;
         int midi2;
         int looper[3];
@@ -46,6 +47,7 @@ class State
         void setLoops(unsigned char loops);
         int getPresetNum(int num);
         int getTempPresetNum(int num);
+        int getTempSetlistPresetNum(int num);
         unsigned char getLoops();
         int getMidi1();
         int getMidi2();
@@ -58,6 +60,8 @@ class State
         void abletonUp();
         void abletonStop();
         void abletonPlay(int num);
+        void abletonSelectUp();
+        void abletonSelectDown();
 };
 
 #endif //State_h

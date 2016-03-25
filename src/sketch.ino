@@ -28,6 +28,7 @@ SoftwareSerial mySerial(8, 7); // RX, TX
 #define SETLISTPRESETBUILD1 10
 #define SETLISTPRESETBUILD2 11
 #define SETLISTSAVE 12
+#define SETLISTSAVEWAIT 13
 #define SAVETYPE_NONE -1
 #define SAVETYPE_LOOPS 0
 #define SAVETYPE_MIDI 1
@@ -37,6 +38,9 @@ SoftwareSerial mySerial(8, 7); // RX, TX
 int prevMode = 0;
 int mode = 0;
 int onePress = -1;
+int favorite = 0;
+int favoritePresetNum = 5;
+SetlistPreset* buildingSetlistPreset;
 bool firstLoop = true;
 
 int modeButtonPin = 0;
@@ -47,9 +51,11 @@ int button4Pin    = 4;
 int button5Pin    = 5;
 
 long copySwapSaveStart = -1;
+long setlistSaveStart = -1;
 int lastPresetNum;
 int srcPresetNum;
 int targetPresetNum;
+int targetSetlistPresetNum;
 int saveType;
 unsigned char saveLoops;
 int saveMidi1;
@@ -62,7 +68,7 @@ bool pressed[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 bool pressHold[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 bool release[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-int modeColors[13][3] = {
+int modeColors[14][3] = {
     // LIVE red
     {255, 0, 0},
     // MIDI blue
@@ -88,6 +94,8 @@ int modeColors[13][3] = {
     // SETLISTPRESETBUILD2 green
     {0, 255, 0},
     // SETLISTSAVE green
+    {0, 255, 0},
+    // SETLISTSAVEWAIT green
     {0, 255, 0}
 };
 
@@ -116,10 +124,11 @@ void setup() {
     int midi2 = storage->getStartupMidi2();
     int preset = storage->getStartupPreset();
     int setlistPreset = 0;
+    int ableton = 1; // for SETLISTPRESETBUILD2 only
 
     // set state object
     int looper[3] = {0, 0, 0};
-    state->setState(preset, setlistPreset, midi1, midi2, loops, looper);
+    state->setState(preset, setlistPreset, midi1, midi2, ableton, loops, looper);
 
     // initial render is taken care of in loop thanks to firstLoop
 }
@@ -177,6 +186,11 @@ void transition(int newMode) {
         // writable modes are LIVE, MIDI, PRESET, LOOPER, ABLETON, and SETLIST
         writableMode = newMode;
     }
+    if (newMode == SETLISTPRESETBUILD1) {
+        buildingSetlistPreset = new SetlistPreset(0, 0, 0);
+    } else if (newMode != SETLISTPRESETBUILD2 && newMode != SETLISTSAVE) {
+        buildingSetlistPreset = NULL;
+    }
     mode = newMode;
 }
 
@@ -187,14 +201,17 @@ void update() {
         // cycle through modes
         nextMode();
         onePress = -1;
+        favorite = 0;
     }
     if (pressHold[0]) {
         if (mode == SETLIST) {
             transition(prevMode);
             onePress = -1;
+            favorite = 0;
         } else if (mode <= ABLETON) {
             transition(SETLIST);
             onePress = -1;
+            favorite = 0;
         }
     }
 
@@ -409,14 +426,30 @@ void update() {
         }
         if (pressHold[3]) {
             // enter SETLISTPRESETBUILD1 mode
+            transition(SETLISTPRESETBUILD1);
         }
         // nothing for pressHold 4
         if (pressHold[5]) {
-            // check state
-            // if favorite is active
-            //   switch back to guitar preset for active setlist preset
-            // else
-            //   activate favorite guitar preset
+            if (favorite) {
+                favorite = 0;
+                setlistPresetNum = state->currentSetlistPreset;
+                setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
+
+                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                preset = storage->getPresetByNum(presetNum);
+
+                state->setLoops(preset->getLoops());
+                state->setMidi1(preset->getMidi1());
+                state->setMidi2(preset->getMidi2());
+            } else {
+                favorite = 1;
+
+                preset = storage->getPresetByNum(favoritePresetNum);
+
+                state->setLoops(preset->getLoops());
+                state->setMidi1(preset->getMidi1());
+                state->setMidi2(preset->getMidi2());
+            }
         }
     } else if (mode == COPYSWAPSAVE) {
         // when set, tempBank should be set to current bank
@@ -547,10 +580,93 @@ void update() {
         }
     } else if (mode == SETLISTPRESETBUILD1) {
         // user chooses a guitar preset
+        int presetNum;
+        Preset* preset;
+        if (press[1]) {
+            state->bankDown();
+        }
+        if (press[2]) {
+            state->bankUp();
+        }
+        if (pressHold[1] || pressHold[2]) {
+            // in bank search, last preset from PRESET mode is still active
+            // so just clear the temp bank and transition to preset
+            state->clearTempBank();
+            transition(prevMode);
+        }
+        if (press[3]) {
+            presetNum = state->getTempPresetNum(0);
+            buildingSetlistPreset->setPresetNum(presetNum);
+            transition(SETLISTPRESETBUILD2);
+        }
+        if (press[4]) {
+            presetNum = state->getTempPresetNum(1);
+            buildingSetlistPreset->setPresetNum(presetNum);
+            transition(SETLISTPRESETBUILD2);
+        }
+        if (press[5]) {
+            presetNum = state->getTempPresetNum(2);
+            buildingSetlistPreset->setPresetNum(presetNum);
+            transition(SETLISTPRESETBUILD2);
+        }
     } else if (mode == SETLISTPRESETBUILD2) {
         // user chooses an ableton scene number
+        int num;
+        if (press[1]) {
+            state->abletonSelectDown();
+        }
+        if (press[2]) {
+            state->abletonSelectUp();
+        }
+        if (pressHold[1] || pressHold[2]) {
+            // in bank search, last preset from PRESET mode is still active
+            // so just clear the temp bank and transition to preset
+            transition(prevMode);
+        }
+        if (pressHold[5]) {
+            buildingSetlistPreset->setAbleton1(state->ableton);
+            transition(SETLISTSAVE);
+        }
     } else if (mode == SETLISTSAVE) {
         // user chooses which bank + patch to save newly created preset on
+        // when set, tempBank should be set to current bank
+        SetlistPreset* targetSetlistPreset;
+        if (press[1]) {
+            state->setlistBankDown();
+        }
+        if (press[2]) {
+            state->setlistBankUp();
+        }
+        if (pressHold[1] || pressHold[2]) {
+            transition(SETLIST);
+        }
+        if (press[3] || press[4] || press[5]) {
+            if (press[3]) {
+                targetSetlistPresetNum = state->getTempSetlistPresetNum(0);
+            }
+            if (press[4]) {
+                targetSetlistPresetNum = state->getTempSetlistPresetNum(1);
+            }
+            if (press[5]) {
+                targetSetlistPresetNum = state->getTempSetlistPresetNum(2);
+            }
+
+            storage->savePresetNumToSetlistPreset(buildingSetlistPreset->getPrestNum(), targetSetlistPresetNum);
+            storage->saveAbleton1ToSetlistPreset(buildingSetlistPreset->ableton1(), targetSetlistPresetNum);
+            storage->saveAbleton2ToSetlistPreset(buildingSetlistPreset->ableton2(), targetSetlistPresetNum);
+
+            transition(SETLISTSAVEWAIT);
+        }
+    } else if (mode == SETLISTSAVEWAIT) {
+        // let it flash
+        if (setlistSaveStart == -1) {
+            setlistSaveStart = millis();
+        } else if (millis() - setlistSaveStart > 2000) {
+            state->selectSetlistPatchByNum(targetSetlistPresetNum);
+            setlistSaveStart = -1;
+            targetSetlistPresetNum = -1;
+            transition(SETLIST);
+        }
     }
 }
 

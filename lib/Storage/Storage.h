@@ -22,6 +22,9 @@ class Storage
         int getStartupMidi1();
         int getStartupMidi2();
         int getStartupPreset();
+        void savePresetNumToSetlistPreset(int presetNum, int num);
+        void saveAbleton1ToSetlistPreset(int ableton1, int num);
+        void saveAbleton2ToSetlistPreset(int ableton2, int num);
 };
 
 #endif //Storage_h

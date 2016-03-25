@@ -14,6 +14,9 @@ class SetlistPreset
         int getPresetNum();
         int getAbleton1();
         int getAbleton2();
+        void setPresetNum(int num);
+        void setAbleton1(int num);
+        void setAbleton2(int num);
 };
 
 #endif //SetlistPreset_h

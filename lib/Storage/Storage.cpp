@@ -109,3 +109,24 @@ int Storage::getStartupPreset() {
     // byte 3
     return EEPROM.read(3);
 }
+
+void Storage::savePresetNumToSetlistPreset(int presetNum, int num) {
+    int base = 4 + ( 3 * 15 );
+    base += num;
+
+    EEPROM.write(base, presetNum);
+}
+
+void Storage::saveAbleton1ToSetlistPreset(int ableton1, int num) {
+    int base = 4 + ( 3 * 15 );
+    base += num;
+
+    EEPROM.write(base + 1, ableton1);
+}
+
+void Storage::saveAbleton2ToSetlistPreset(int ableton2, int num) {
+    int base = 4 + ( 3 * 15 );
+    base += num;
+
+    EEPROM.write(base + 2, ableton2);
+}
