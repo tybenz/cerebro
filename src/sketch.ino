@@ -761,7 +761,6 @@ void render() {
         if (press[3] || pressed[3]) {
             ledStates[2] = true;
         }
-    } else if (mode == ABLETON) {
     } else if (mode == SETLIST) {
         if (press[1] || pressed[1]) {
             ledStates[0] = true;
