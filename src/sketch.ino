@@ -8,6 +8,7 @@
 LightGrid* lightgrid;
 Storage* storage = new Storage();
 State* state = new State();
+State* oldState;
 Buttons* buttons = new Buttons();
 
 SoftwareSerial mySerial(8, 7); // RX, TX
@@ -114,7 +115,7 @@ void loop() {
         if (input - input2 < 20 && input - input2 > -20) {
             oldInput = input;
             int i = 0;
-            State* oldState = state->copy();
+            oldState = state->copy();
 
             buttons->updateStates(input);
 
@@ -126,15 +127,11 @@ void loop() {
             }
             buttons->detectEvents(press, pressed, pressHold, release);
 
-        update();
+            update();
 
-            // If state has changed
-            if (firstLoop || state->diff(oldState) || prevMode != mode) {
-                firstLoop = false;
-                render();
+            render();
 
-                storage->saveState(writableMode, state);
-            }
+            storage->saveState(writableMode, state);
         }
     }
     oldInput = input;
@@ -487,18 +484,25 @@ void render() {
 
     lightgrid->writeShifter();
 
-    // send midi program changes for midi1 and midi2
-    int program = state->getMidi1();
-    // Serial.println("SEND MIDI 1");
-    // Serial.println(program);
-    sendMidi(0xC1, program);
+    int program;
+    if (state->midi1 != oldState->midi1) {
+        // send midi program changes for midi1 and midi2
+        program = state->getMidi1();
+        // Serial.println("SEND MIDI 1");
+        // Serial.println(program);
+        sendMidi(0xC1, program);
+    }
 
-    program = state->getMidi2();
-    // Serial.println("SEND MIDI 2");
-    // Serial.println(program);
-    sendMidi(0xC0, program);
+    if (state->midi2 != oldState->midi2) {
+        program = state->getMidi2();
+        // Serial.println("SEND MIDI 2");
+        // Serial.println(program);
+        sendMidi(0xC0, program);
+    }
 
-    // trigger active loops, deactivate inactive loops
+    if (state->loops != oldState->loops) {
+        // trigger active loops, deactivate inactive loops
+    }
 
     // set looper control relays to high if activated
     // set looper control relays to low if deactivated
