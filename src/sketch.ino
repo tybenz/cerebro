@@ -8,6 +8,7 @@
 LightGrid* lightgrid;
 Storage* storage = new Storage();
 Model* model = new Model();
+Model* oldModel;
 Buttons* buttons = new Buttons();
 
 SoftwareSerial mySerial(8, 7); // RX, TX
@@ -114,7 +115,7 @@ void loop() {
         if (input - input2 < 20 && input - input2 > -20) {
             oldInput = input;
             int i = 0;
-            Model* oldModel = model->copy();
+            oldModel = model->copy();
 
             buttons->updateStates(input);
 
@@ -126,7 +127,7 @@ void loop() {
             }
             buttons->detectEvents(press, pressed, pressHold, release);
 
-        update();
+            update();
 
             // If model has changed
             if (firstLoop || model->diff(oldModel) || prevMode != mode) {
@@ -135,6 +136,9 @@ void loop() {
 
                 storage->saveModel(writableMode, model);
             }
+            render();
+
+            storage->saveModel(writableMode, model);
         }
     }
     oldInput = input;
@@ -487,18 +491,25 @@ void render() {
 
     lightgrid->writeShifter();
 
-    // send midi program changes for midi1 and midi2
-    int program = model->getMidi1();
-    // Serial.println("SEND MIDI 1");
-    // Serial.println(program);
-    sendMidi(0xC1, program);
+    int program;
+    if (model->midi1 != oldModel->midi1) {
+        // send midi program changes for midi1 and midi2
+        program = model->getMidi1();
+        // Serial.println("SEND MIDI 1");
+        // Serial.println(program);
+        sendMidi(0xC1, program);
+    }
 
-    program = model->getMidi2();
-    // Serial.println("SEND MIDI 2");
-    // Serial.println(program);
-    sendMidi(0xC0, program);
+    if (model->midi2 != oldModel->midi2) {
+        program = model->getMidi2();
+        // Serial.println("SEND MIDI 2");
+        // Serial.println(program);
+        sendMidi(0xC0, program);
+    }
 
-    // trigger active loops, deactivate inactive loops
+    if (model->loops != oldModel->loops) {
+        // trigger active loops, deactivate inactive loops
+    }
 
     // set looper control relays to high if activated
     // set looper control relays to low if deactivated
