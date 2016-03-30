@@ -85,6 +85,7 @@ void setup() {
     Serial.begin(9600);
     Serial.println(10000);
     pinMode(A5, INPUT_PULLUP); // sets analog pin for input
+    pinMode(A6, INPUT_PULLUP); // sets analog pin for input
 
     mode = storage->getStartupMode();
     Serial.println(mode);
@@ -103,20 +104,25 @@ void setup() {
 }
 
 int debounceDelay = 30;
-int oldInput = 0;
+int oldInput1 = 0;
+int oldInput2 = 0;
 long lastReadTime = 0;
 
 void loop() {
-    int input = analogRead(A5);
-    if (input != oldInput) {
+    int input1 = analogRead(A5);
+    int input2 = analogRead(A6);
+    if (input1 != oldInput1 || input2 != oldInput2) {
         delay(20);
-        int input2 = analogRead(A5);
-        if (input - input2 < 20 && input - input2 > -20) {
-            oldInput = input;
+        int input3 = analogRead(A5);
+        int input4 = analogRead(A6);
+        if (input1 - input3 < 20 && input1 - input3 > -20 ||
+            input2 - input4 < 20 && input2 - input4 > -20) {
+            oldInput1 = input1;
+            oldInput2 = input2;
             int i = 0;
             State* oldState = state->copy();
 
-            buttons->updateStates(input);
+            buttons->updateStates(input1, input2);
 
             for (int i = 0; i < BUTTON_COUNT; i++) {
                 press[i] = false;
@@ -137,7 +143,8 @@ void loop() {
             }
         }
     }
-    oldInput = input;
+    oldInput1 = input1;
+    oldInput2 = input2;
 }
 
 void nextMode() {

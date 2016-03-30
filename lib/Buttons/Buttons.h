@@ -27,7 +27,7 @@ class Buttons
         struct button buttons[BUTTON_COUNT];
     public:
         Buttons();
-        void updateStates(int num);
+        void updateStates(int num1, int num2);
         bool* getStates();
         void detectEvents(bool *presses, bool *presseds, bool *pressHolds, bool *releases);
 };

@@ -5,13 +5,13 @@
 #define START_INDEX_FOR_SIDE_BY_SIDE_BUTTONS 2
 #define END_INDEX_FOR_SIDE_BY_SIDE_BUTTONS 5
 
-int thresholds[6][2] = {
-    {600, 670},
-    {550, 595},
-    {500, 545},
-    {400, 490},
-    {300, 390},
-    {200, 290}
+int thresholds[6][3] = {
+    {0, 600, 670},
+    {0, 550, 595},
+    {1, 600, 670},
+    {0, 400, 490},
+    {1, 550, 595},
+    {0, 200, 290}
 };
 
 Buttons::Buttons() {
@@ -20,13 +20,17 @@ Buttons::Buttons() {
     }
 }
 
-void Buttons::updateStates(int num) {
-    bool show = num < 1000;
+void Buttons::updateStates(int num1, int num2) {
+    int input;
     for (int i = 0; i < ACTUAL_BUTTON_COUNT; i++) {
+        input = num1;
         int* threshold = thresholds[i];
+        if (threshold[0]) {
+            input = num2;
+        }
         struct button button = buttons[i];
         bool prevState = button.state;
-        if (num >= threshold[0] && num <= threshold[1]) {
+        if (input >= threshold[1] && input <= threshold[2]) {
             button.state = true;
         } else {
             button.state = false;
@@ -129,26 +133,26 @@ void Buttons::detectEvents(bool *presses, bool *presseds, bool *pressHolds, bool
         // Buttons should be
         // 0(mode)         1 <-6-> 2 <-7-> 3 <-8-> 4 <-9-> 5
         //     start checking left ^    stop chekcing left ^
-        // if (i > START_INDEX_FOR_SIDE_BY_SIDE_BUTTONS &&
-        //     i <= END_INDEX_FOR_SIDE_BY_SIDE_BUTTONS) {
-        //     leftButton = buttons[i - 1];
-        // } else {
-        //     leftButton = initButton;
-        // }
+        if (i > START_INDEX_FOR_SIDE_BY_SIDE_BUTTONS &&
+            i <= END_INDEX_FOR_SIDE_BY_SIDE_BUTTONS) {
+            leftButton = buttons[i - 1];
+        } else {
+            leftButton = initButton;
+        }
 
         // if button state is HIGH for first 50 ms, time will be set, but press
         // and pressed with be false
-        // if (button.time != -1 && !button.press && !button.pressed) {
-        //     if (leftButton.time != -1 && !leftButton.press && !leftButton.pressed) {
-        //         // trigger double press self and to the left
-        //         button.press = true;
-        //         leftButton.press = true;
-        //         // set up double press (always 4 higher)
-        //         buttons[i+4].time = fmin(button.time, leftButton.time);
-        //         buttons[i+4].press = true;
-        //         buttons[i+4].state = HIGH;
-        //     }
-        // }
+        if (button.time != -1 && !button.press && !button.pressed) {
+            if (leftButton.time != -1 && !leftButton.press && !leftButton.pressed) {
+                // trigger double press self and to the left
+                button.press = true;
+                leftButton.press = true;
+                // set up double press (always 4 higher)
+                buttons[i+4].time = fmin(button.time, leftButton.time);
+                buttons[i+4].press = true;
+                buttons[i+4].state = HIGH;
+            }
+        }
 
         if (i == 0) {
             prevTime = button.time;
