@@ -1,9 +1,9 @@
-#ifndef State_h
-#define State_h
+#ifndef Model_h
+#define Model_h
 
 #include <Arduino.h>
 
-class State
+class Model
 {
     public:
         int currentPreset;
@@ -15,10 +15,10 @@ class State
         int getBank();
         int getPatch();
         int getPatchForPresetNum(int num);
-        State();
-        void setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
-        bool diff(State* state);
-        State* copy();
+        Model();
+        void setModel(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]);
+        bool diff(Model* model);
+        Model* copy();
         void midi1Up();
         void midi1Down();
         void midi2Up();
@@ -46,4 +46,4 @@ class State
         void setMidi2(int num);
 };
 
-#endif //State_h
+#endif //Model_h

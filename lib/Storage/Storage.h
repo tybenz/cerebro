@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <Preset.h>
-#include <State.h>
+#include <Model.h>
 
 class Storage
 {
     public:
         Storage();
-        void saveState(int mode, State* state);
+        void saveModel(int mode, Model* model);
         void savePresetByNum(Preset *preset, int num);
         void saveLoopsToPreset(unsigned char loops, int num);
         void saveMidiToPreset(int midi1, int midi2, int num);

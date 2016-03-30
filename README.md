@@ -27,7 +27,7 @@
 - Press (P): When HIGH, wait 50 ms for no other adjacent switch, trigger, trigger P
 - Double Press (DP): if two adjacents pressed within 50ms, trigger DP (not currently possible)
 - Press+Hold (PH): Wait 1sec, then cancel last "press", trigger PH
-- For a press, keep last state for 1sec, if it's a PH, jump back to that state and perform the PH
+- For a press, keep last mode for 1sec, if it's a PH, jump back to that mode and perform the PH
 
 
 ## LIVE (red)
@@ -53,7 +53,7 @@
 ## COPYSWAPSAVE (purple)
 - 1 bank down
 - 2 bank up
-- PH 1 or 2 PREVSTATE
+- PH 1 or 2 PREVMODE
 - 3 4 or 5 to copy/save transition to COPYSWAPSAVEWAIT (flash 3, 4, 5 LED)
 
 ## COPYSWAPSAVEWAIT (purple flashing)
@@ -62,8 +62,8 @@
 
 ## STARTUP
 - reset all relays
-- restore state
-  - last MIDI program for each device, last known true bypass loops, activate last state, remember last bank/patch
+- restore model
+  - last MIDI program for each device, last known true bypass loops, activate last mode, remember last bank/patch
 
 ## MEMORY
 - Patches (3 bytes each):
@@ -74,7 +74,7 @@
 - 45 presets (15 banks * 3 patches)
 - 135 bytes for patches (45 * 3 bytes) (addresses 4-138)
 
-- State (4 bytes) (addresses 0-3):
+- Model (4 bytes) (addresses 0-3):
   - 1st byte: first 5 bits for active loops. last 2 bits for mode (LIVE, MIDI, LOOPER, PRESET)
   - 2nd byte: which preset active on device 1
   - 3rd byte: which preset active on device 2

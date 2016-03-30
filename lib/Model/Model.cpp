@@ -1,16 +1,16 @@
-#include <State.h>
+#include <Model.h>
 
 int PPB = 3; // patches per bank
 int NUM_BANKS = 15; // binary 3 digits (not zero)
 int MAX_PRESETS = PPB * NUM_BANKS;
 
-State::State() : currentPreset(0), tempBank(-1), midi1(0x00), midi2(0x00), loops(0x00) {
+Model::Model() : currentPreset(0), tempBank(-1), midi1(0x00), midi2(0x00), loops(0x00) {
     for (int i = 0; i < 3; i++) {
         looper[i] = 0;
     }
 }
 
-void State::setState(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]) {
+void Model::setModel(int newPreset, int newMidi1, int newMidi2, unsigned char newLoops, int newLooper[]) {
     currentPreset = newPreset;
     midi1 = newMidi1;
     midi2 = newMidi2;
@@ -20,29 +20,29 @@ void State::setState(int newPreset, int newMidi1, int newMidi2, unsigned char ne
     }
 }
 
-bool State::diff(State* state) {
-    if (currentPreset != state->currentPreset) {
+bool Model::diff(Model* model) {
+    if (currentPreset != model->currentPreset) {
         return true;
     }
-    if (midi1 != state->midi1) {
+    if (midi1 != model->midi1) {
         return true;
     }
-    if (midi2 != state->midi2) {
+    if (midi2 != model->midi2) {
         return true;
     }
-    if (loops != state->loops) {
+    if (loops != model->loops) {
         return true;
     }
     return false;
 }
 
-State* State::copy() {
-    State* newState;
-    newState->setState(currentPreset, midi1, midi2, loops, looper);
-    return newState;
+Model* Model::copy() {
+    Model* newModel;
+    newModel->setModel(currentPreset, midi1, midi2, loops, looper);
+    return newModel;
 }
 
-void State::midi1Up() {
+void Model::midi1Up() {
     midi1++;
     if (midi1 > 127) {
         midi1 = 127;
@@ -51,7 +51,7 @@ void State::midi1Up() {
     Serial.println(midi1);
 }
 
-void State::midi1Down() {
+void Model::midi1Down() {
     midi1--;
     if (midi1 < 0) {
         midi1 = 0;
@@ -60,7 +60,7 @@ void State::midi1Down() {
     Serial.println(midi1);
 }
 
-void State::midi2Up() {
+void Model::midi2Up() {
     midi2++;
     if (midi2 > 127) {
         midi2 = 127;
@@ -69,7 +69,7 @@ void State::midi2Up() {
     Serial.println(midi2);
 }
 
-void State::midi2Down() {
+void Model::midi2Down() {
     midi2--;
     if (midi2 < 0) {
         midi2 = 0;
@@ -78,7 +78,7 @@ void State::midi2Down() {
     Serial.println(midi2);
 }
 
-void State::bankUp() {
+void Model::bankUp() {
     if (tempBank == -1) {
         tempBank = getBank() + 1;
     } else {
@@ -89,7 +89,7 @@ void State::bankUp() {
     }
 }
 
-void State::bankDown() {
+void Model::bankDown() {
     if (tempBank == -1) {
         tempBank = getBank() - 1;
     } else {
@@ -100,45 +100,45 @@ void State::bankDown() {
     }
 }
 
-void State::clearTempBank() {
+void Model::clearTempBank() {
     tempBank = -1;
 }
 
-int State::selectPatchByNum(int num) {
+int Model::selectPatchByNum(int num) {
     currentPreset = num;
 }
 
-int State::selectPatch(int num) {
+int Model::selectPatch(int num) {
     selectPatchByNum(getBank() * PPB + num);
 }
 
-int State::selectPatch(int num, bool useTempBank) {
+int Model::selectPatch(int num, bool useTempBank) {
     selectPatchByNum(tempBank * PPB + num);
     clearTempBank();
 }
 
-void State::activateLoop(int num) {
+void Model::activateLoop(int num) {
     loops |= 1 << num;
 }
 
-void State::deactivateLoop(int num) {
+void Model::deactivateLoop(int num) {
     loops &= ~(1 << num);
 }
 
-void State::toggleLoop(int num) {
+void Model::toggleLoop(int num) {
     loops ^= 1 << num;
 }
 
-void State::setLoops(unsigned char newLoops) {
+void Model::setLoops(unsigned char newLoops) {
     loops = newLoops;
 }
 
-int State::getBank() {
+int Model::getBank() {
     /* return currentPreset / PPB; */
     return currentPreset / PPB;
 }
 
-int State::getTempBank() {
+int Model::getTempBank() {
     if (tempBank == -1) {
         return getBank();
     } else {
@@ -146,51 +146,51 @@ int State::getTempBank() {
     }
 }
 
-int State::getPatch() {
+int Model::getPatch() {
     /* return currentPreset % PPB; */
     return currentPreset % PPB;
 }
 
-int State::getPatchForPresetNum(int num) {
+int Model::getPatchForPresetNum(int num) {
     return num % PPB;
 }
 
-int State::getPresetNum(int num) {
+int Model::getPresetNum(int num) {
     return getBank() * PPB + num;
 }
 
-int State::getTempPresetNum(int num) {
+int Model::getTempPresetNum(int num) {
     return getTempBank() * PPB + num;
 }
 
-unsigned char State::getLoops() {
+unsigned char Model::getLoops() {
     return loops;
 }
 
-int State::getMidi1() {
+int Model::getMidi1() {
     return midi1;
 }
 
-int State::getMidi2() {
+int Model::getMidi2() {
     return midi2;
 }
 
-void State::activateLooperControl(int num) {
+void Model::activateLooperControl(int num) {
     looper[num] = 1;
 }
 
-void State::deactivateLooperControl(int num) {
+void Model::deactivateLooperControl(int num) {
     looper[num] = 0;
 }
 
-void State::neutralizeLooperControl(int num) {
+void Model::neutralizeLooperControl(int num) {
     looper[num] = -1;
 }
 
-void State::setMidi1(int num) {
+void Model::setMidi1(int num) {
     midi1 = num;
 }
 
-void State::setMidi2(int num) {
+void Model::setMidi2(int num) {
     midi2 = num;
 }
