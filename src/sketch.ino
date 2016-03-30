@@ -1,6 +1,6 @@
 #include <LightGrid.h>
 #include <Storage.h>
-#include <State.h>
+#include <Model.h>
 #include <Buttons.h>
 #include <Preset.h>
 #include <SetlistPreset.h>
@@ -8,7 +8,8 @@
 
 LightGrid* lightgrid;
 Storage* storage = new Storage();
-State* state = new State();
+Model* model = new Model();
+Model* oldModel;
 Buttons* buttons = new Buttons();
 
 SoftwareSerial mySerial(8, 7); // RX, TX
@@ -126,9 +127,9 @@ void setup() {
     int setlistPreset = 0;
     int ableton = 1; // for SETLISTPRESETBUILD2 only
 
-    // set state object
+    // set model object
     int looper[3] = {0, 0, 0};
-    state->setState(preset, setlistPreset, midi1, midi2, ableton, loops, looper);
+    model->setModel(preset, setlistPreset, midi1, midi2, ableton, loops, looper);
 
     // initial render is taken care of in loop thanks to firstLoop
 }
@@ -145,7 +146,7 @@ void loop() {
         if (input - input2 < 20 && input - input2 > -20) {
             oldInput = input;
             int i = 0;
-            State* oldState = state->copy();
+            oldModel = model->copy();
 
             buttons->updateStates(input);
 
@@ -157,15 +158,18 @@ void loop() {
             }
             buttons->detectEvents(press, pressed, pressHold, release);
 
-        update();
+            update();
 
-            // If state has changed
-            if (firstLoop || state->diff(oldState) || prevMode != mode) {
+            // If model has changed
+            if (firstLoop || model->diff(oldModel) || prevMode != mode) {
                 firstLoop = false;
                 render();
 
-                storage->saveState(writableMode, state);
+                storage->saveModel(writableMode, model);
             }
+            render();
+
+            storage->saveModel(writableMode, model);
         }
     }
     oldInput = input;
@@ -195,7 +199,7 @@ void transition(int newMode) {
 }
 
 void update() {
-    // UPDATE STATE
+    // UPDATE MODEL
     if (press[0]) {
         if (mode <= ABLETON)
         // cycle through modes
@@ -218,47 +222,47 @@ void update() {
     if (mode == LIVE) {
         // press on 1-5 triggers true bypass loop toggle
         if (press[1]) {
-            state->toggleLoop(0);
+            model->toggleLoop(0);
         }
         if (press[2]) {
-            state->toggleLoop(1);
+            model->toggleLoop(1);
         }
         if (press[3]) {
-            state->toggleLoop(2);
+            model->toggleLoop(2);
         }
         if (press[4]) {
-            state->toggleLoop(3);
+            model->toggleLoop(3);
         }
         if (press[5]) {
-            state->toggleLoop(4);
+            model->toggleLoop(4);
         }
         if (pressHold[5]) {
             saveType = SAVETYPE_LOOPS;
-            saveLoops = state->getLoops();
+            saveLoops = model->getLoops();
             transition(COPYSWAPSAVE);
         }
     } else if (mode == MIDI) {
         // press on 1 & 2 trigger midi1 down/up
         if (press[1]) {
-            state->midi1Down();
+            model->midi1Down();
         }
         if (press[2]) {
-            state->midi1Up();
+            model->midi1Up();
         }
         if (press[3]) {
-            state->midi2Down();
+            model->midi2Down();
         }
         if (press[4]) {
-            state->midi2Up();
+            model->midi2Up();
         }
         if (press[5]) {
-            state->toggleLoop(4);
+            model->toggleLoop(4);
         }
         if(pressHold[5]) {
             // transition to SAVE
             saveType = SAVETYPE_MIDI;
-            saveMidi1 = state->getMidi1();
-            saveMidi2 = state->getMidi2();
+            saveMidi1 = model->getMidi1();
+            saveMidi2 = model->getMidi2();
             transition(COPYSWAPSAVE);
         }
     } else if (mode == PRESET) {
@@ -266,84 +270,84 @@ void update() {
         int presetNum;
         Preset* preset;
         if (press[1]) {
-            state->bankDown();
+            model->bankDown();
             transition(BANKSEARCH);
         }
         if (press[2]) {
-            state->bankUp();
+            model->bankUp();
             transition(BANKSEARCH);
         }
         if (press[3]) {
-            presetNum = state->selectPatch(0);
+            presetNum = model->selectPatch(0);
             preset = storage->getPresetByNum(presetNum);
-            state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
+            model->setLoops(preset->getLoops());
+            model->setMidi1(preset->getMidi1());
+            model->setMidi2(preset->getMidi2());
         }
         if (press[4]) {
-            presetNum = state->selectPatch(1);
+            presetNum = model->selectPatch(1);
             preset = storage->getPresetByNum(presetNum);
-            state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
+            model->setLoops(preset->getLoops());
+            model->setMidi1(preset->getMidi1());
+            model->setMidi2(preset->getMidi2());
         }
         if (press[5]) {
-            presetNum = state->selectPatch(2);
+            presetNum = model->selectPatch(2);
             preset = storage->getPresetByNum(presetNum);
-            state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
+            model->setLoops(preset->getLoops());
+            model->setMidi1(preset->getMidi1());
+            model->setMidi2(preset->getMidi2());
         }
         if (pressHold[3]) {
-            srcPresetNum = state->getPresetNum(0);
+            srcPresetNum = model->getPresetNum(0);
             srcPreset = storage->getPresetByNum(srcPresetNum);
             transition(COPYSWAPSAVE);
         }
         if (pressHold[4]) {
-            srcPresetNum = state->getPresetNum(1);
+            srcPresetNum = model->getPresetNum(1);
             srcPreset = storage->getPresetByNum(srcPresetNum);
             transition(COPYSWAPSAVE);
         }
         if (pressHold[5]) {
-            srcPresetNum = state->getPresetNum(2);
+            srcPresetNum = model->getPresetNum(2);
             srcPreset = storage->getPresetByNum(srcPresetNum);
             transition(COPYSWAPSAVE);
         }
     } else if (mode == LOOPER) {
-        // XXX should this go through state + render or be "special" in that we
+        // XXX should this go through model + render or be "special" in that we
         // can hard-code right here?
         //
         // press on 1, 2, 3 trigger relays
         if (press[1]) {
-            state->activateLooperControl(0);
+            model->activateLooperControl(0);
         }
         if (press[2]) {
-            state->activateLooperControl(1);
+            model->activateLooperControl(1);
         }
         if (press[3]) {
-            state->activateLooperControl(2);
+            model->activateLooperControl(2);
         }
         if (release[1]) {
             // set relay low
-            state->deactivateLooperControl(0);
+            model->deactivateLooperControl(0);
         }
         if (release[2]) {
             // set relay low
-            state->deactivateLooperControl(1);
+            model->deactivateLooperControl(1);
         }
         if (release[3]) {
             // set relay low
-            state->deactivateLooperControl(2);
+            model->deactivateLooperControl(2);
         }
     } else if (mode == ABLETON) {
         if (press[1]) {
-            state->abletonPlay();
+            model->abletonPlay();
         }
         if (press[3]) {
-            state->abletonUp();
+            model->abletonUp();
         }
         if (press[5]) {
-            state->abletonStop();
+            model->abletonStop();
         }
     } else if (mode == SETLIST) {
         // press on 1 & 2 trigger bank down/up. trigger SETLISTBANKSEARCH
@@ -352,76 +356,76 @@ void update() {
         Preset* preset;
         SetlistPreset* setlistPreset;
         if (press[1]) {
-            state->setlistBankDown();
+            model->setlistBankDown();
             transition(SETLISTBANKSEARCH);
             onePress = -1;
         }
         if (press[2]) {
-            state->setlistBankUp();
+            model->setlistBankUp();
             transition(SETLISTBANKSEARCH);
             onePress = -1;
         }
         if (press[3]) {
             // get setlist preset
-            setlistPresetNum = state->selectSetlistPatch(0);
+            setlistPresetNum = model->selectSetlistPatch(0);
             setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
             if (onePress = 3) {
                 // play ableton loop
-                state->abletonPlay(setlistPreset->getAbleton2());
+                model->abletonPlay(setlistPreset->getAbleton2());
             } else {
                 onePress = 3;
 
                 // get guitar preset
-                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                presetNum = model->selectPatchByNum(setlistPreset->getPresetNum());
                 preset = storage->getPresetByNum(presetNum);
                 // activate guitar preset
-                state->setLoops(preset->getLoops());
-                state->setMidi1(preset->getMidi1());
-                state->setMidi2(preset->getMidi2());
+                model->setLoops(preset->getLoops());
+                model->setMidi1(preset->getMidi1());
+                model->setMidi2(preset->getMidi2());
                 // play ableton pad
-                state->abletonPlay(setlistPreset->getAbleton1());
+                model->abletonPlay(setlistPreset->getAbleton1());
             }
         }
         if (press[4]) {
             // get setlist preset
-            setlistPresetNum = state->selectSetlistPatch(1);
+            setlistPresetNum = model->selectSetlistPatch(1);
             setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
             if (onePress = 4) {
                 // play ableton loop
-                state->abletonPlay(setlistPreset->getAbleton2());
+                model->abletonPlay(setlistPreset->getAbleton2());
             } else {
                 onePress = 4;
 
                 // get guitar preset
-                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                presetNum = model->selectPatchByNum(setlistPreset->getPresetNum());
                 preset = storage->getPresetByNum(presetNum);
                 // activate guitar preset
-                state->setLoops(preset->getLoops());
-                state->setMidi1(preset->getMidi1());
-                state->setMidi2(preset->getMidi2());
+                model->setLoops(preset->getLoops());
+                model->setMidi1(preset->getMidi1());
+                model->setMidi2(preset->getMidi2());
                 // play ableton pad
-                state->abletonPlay(setlistPreset->getAbleton1());
+                model->abletonPlay(setlistPreset->getAbleton1());
             }
         }
         if (press[5]) {
             // get setlist preset
-            setlistPresetNum = state->selectSetlistPatch(2);
+            setlistPresetNum = model->selectSetlistPatch(2);
             setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
             if (onePress = 5) {
                 // play ableton loop
-                state->abletonPlay(setlistPreset->getAbleton2());
+                model->abletonPlay(setlistPreset->getAbleton2());
             } else {
                 onePress = 5;
 
                 // get guitar preset
-                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                presetNum = model->selectPatchByNum(setlistPreset->getPresetNum());
                 preset = storage->getPresetByNum(presetNum);
                 // activate guitar preset
-                state->setLoops(preset->getLoops());
-                state->setMidi1(preset->getMidi1());
-                state->setMidi2(preset->getMidi2());
+                model->setLoops(preset->getLoops());
+                model->setMidi1(preset->getMidi1());
+                model->setMidi2(preset->getMidi2());
                 // play ableton pad
-                state->abletonPlay(setlistPreset->getAbleton1());
+                model->abletonPlay(setlistPreset->getAbleton1());
             }
         }
         if (pressHold[3]) {
@@ -432,46 +436,46 @@ void update() {
         if (pressHold[5]) {
             if (favorite) {
                 favorite = 0;
-                setlistPresetNum = state->currentSetlistPreset;
+                setlistPresetNum = model->currentSetlistPreset;
                 setlistPreset = storage->getSetlistPresetByNum(setlistPresetNum);
 
-                presetNum = state->selectPatchByNum(setlistPreset->getPresetNum());
+                presetNum = model->selectPatchByNum(setlistPreset->getPresetNum());
                 preset = storage->getPresetByNum(presetNum);
 
-                state->setLoops(preset->getLoops());
-                state->setMidi1(preset->getMidi1());
-                state->setMidi2(preset->getMidi2());
+                model->setLoops(preset->getLoops());
+                model->setMidi1(preset->getMidi1());
+                model->setMidi2(preset->getMidi2());
             } else {
                 favorite = 1;
 
                 preset = storage->getPresetByNum(favoritePresetNum);
 
-                state->setLoops(preset->getLoops());
-                state->setMidi1(preset->getMidi1());
-                state->setMidi2(preset->getMidi2());
+                model->setLoops(preset->getLoops());
+                model->setMidi1(preset->getMidi1());
+                model->setMidi2(preset->getMidi2());
             }
         }
     } else if (mode == COPYSWAPSAVE) {
         // when set, tempBank should be set to current bank
         if (press[1]) {
-            state->bankDown();
+            model->bankDown();
         }
         if (press[2]) {
-            state->bankUp();
+            model->bankUp();
         }
         if (pressHold[1] || pressHold[2]) {
-            // state->selectPatchByNum(srcPresetNum);
+            // model->selectPatchByNum(srcPresetNum);
             transition(prevMode);
         }
         if (press[3] || press[4] || press[5]) {
             if (press[3]) {
-                targetPresetNum = state->getTempPresetNum(0);
+                targetPresetNum = model->getTempPresetNum(0);
             }
             if (press[4]) {
-                targetPresetNum = state->getTempPresetNum(1);
+                targetPresetNum = model->getTempPresetNum(1);
             }
             if (press[5]) {
-                targetPresetNum = state->getTempPresetNum(2);
+                targetPresetNum = model->getTempPresetNum(2);
             }
             targetPreset = storage->getPresetByNum(targetPresetNum);
 
@@ -484,10 +488,10 @@ void update() {
                 // came from either LIVE or MIDI, just saving to a preset
                 if (saveType == SAVETYPE_LOOPS) {
                     storage->saveLoopsToPreset(saveLoops, targetPresetNum);
-                    state->selectPatchByNum(targetPresetNum);
+                    model->selectPatchByNum(targetPresetNum);
                 } else if (saveType == SAVETYPE_MIDI) {
                     storage->saveMidiToPreset(saveMidi1, saveMidi2, targetPresetNum);
-                    state->selectPatchByNum(targetPresetNum);
+                    model->selectPatchByNum(targetPresetNum);
                 }
                 saveType = SAVETYPE_NONE;
                 transition(COPYSWAPSAVEWAIT);
@@ -498,7 +502,7 @@ void update() {
         if (copySwapSaveStart == -1) {
             copySwapSaveStart = millis();
         } else if (millis() - copySwapSaveStart > 2000) {
-            state->selectPatchByNum(targetPresetNum);
+            model->selectPatchByNum(targetPresetNum);
             delete targetPreset;
             targetPresetNum = -1;
             transition(PRESET);
@@ -509,7 +513,7 @@ void update() {
             if (srcPreset) {
                 storage->savePresetByNum(targetPreset, srcPresetNum);
             }
-            state->selectPatchByNum(targetPresetNum);
+            model->selectPatchByNum(targetPresetNum);
             delete targetPreset;
             transition(PRESET);
             copySwapSaveStart = -1;
@@ -518,64 +522,64 @@ void update() {
         int presetNum;
         Preset* preset;
         if (press[1]) {
-            state->bankDown();
+            model->bankDown();
         }
         if (press[2]) {
-            state->bankUp();
+            model->bankUp();
         }
         if (pressHold[1] || pressHold[2]) {
             // in bank search, last preset from PRESET mode is still active
             // so just clear the temp bank and transition to preset
-            state->clearTempBank();
+            model->clearTempBank();
             transition(PRESET);
         }
         if (press[3]) {
-            presetNum = state->selectPatch(0, true);
+            presetNum = model->selectPatch(0, true);
             preset = storage->getPresetByNum(presetNum);
-            state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
+            model->setLoops(preset->getLoops());
+            model->setMidi1(preset->getMidi1());
+            model->setMidi2(preset->getMidi2());
             transition(PRESET);
         }
         if (press[4]) {
-            presetNum = state->selectPatch(1, true);
+            presetNum = model->selectPatch(1, true);
             preset = storage->getPresetByNum(presetNum);
-            state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
+            model->setLoops(preset->getLoops());
+            model->setMidi1(preset->getMidi1());
+            model->setMidi2(preset->getMidi2());
             transition(PRESET);
         }
         if (press[5]) {
-            presetNum = state->selectPatch(2, true);
+            presetNum = model->selectPatch(2, true);
             preset = storage->getPresetByNum(presetNum);
-            state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
+            model->setLoops(preset->getLoops());
+            model->setMidi1(preset->getMidi1());
+            model->setMidi2(preset->getMidi2());
             transition(PRESET);
         }
     } else if (mode == SETLISTBANKSEARCH) {
         if (press[1]) {
-            state->setlistBankDown();
+            model->setlistBankDown();
         }
         if (press[2]) {
-            state->setlistBankUp();
+            model->setlistBankUp();
         }
         if (pressHold[1] || pressHold[2]) {
             // in bank search, last preset from PRESET mode is still active
             // so just clear the temp bank and transition to preset
-            state->clearSetlistTempBank();
+            model->clearSetlistTempBank();
             transition(SETLIST);
         }
         if (press[3]) {
-            state->selectSetlistPatch(0, true);
+            model->selectSetlistPatch(0, true);
             transition(SETLIST);
         }
         if (press[4]) {
-            state->selectSetlistPatch(1, true);
+            model->selectSetlistPatch(1, true);
             transition(SETLIST);
         }
         if (press[5]) {
-            state->selectSetlistPatch(2, true);
+            model->selectSetlistPatch(2, true);
             transition(SETLIST);
         }
     } else if (mode == SETLISTPRESETBUILD1) {
@@ -583,29 +587,29 @@ void update() {
         int presetNum;
         Preset* preset;
         if (press[1]) {
-            state->bankDown();
+            model->bankDown();
         }
         if (press[2]) {
-            state->bankUp();
+            model->bankUp();
         }
         if (pressHold[1] || pressHold[2]) {
             // in bank search, last preset from PRESET mode is still active
             // so just clear the temp bank and transition to preset
-            state->clearTempBank();
+            model->clearTempBank();
             transition(prevMode);
         }
         if (press[3]) {
-            presetNum = state->getTempPresetNum(0);
+            presetNum = model->getTempPresetNum(0);
             buildingSetlistPreset->setPresetNum(presetNum);
             transition(SETLISTPRESETBUILD2);
         }
         if (press[4]) {
-            presetNum = state->getTempPresetNum(1);
+            presetNum = model->getTempPresetNum(1);
             buildingSetlistPreset->setPresetNum(presetNum);
             transition(SETLISTPRESETBUILD2);
         }
         if (press[5]) {
-            presetNum = state->getTempPresetNum(2);
+            presetNum = model->getTempPresetNum(2);
             buildingSetlistPreset->setPresetNum(presetNum);
             transition(SETLISTPRESETBUILD2);
         }
@@ -613,10 +617,10 @@ void update() {
         // user chooses an ableton scene number
         int num;
         if (press[1]) {
-            state->abletonSelectDown();
+            model->abletonSelectDown();
         }
         if (press[2]) {
-            state->abletonSelectUp();
+            model->abletonSelectUp();
         }
         if (pressHold[1] || pressHold[2]) {
             // in bank search, last preset from PRESET mode is still active
@@ -624,7 +628,7 @@ void update() {
             transition(prevMode);
         }
         if (pressHold[5]) {
-            buildingSetlistPreset->setAbleton1(state->currentAbleton);
+            buildingSetlistPreset->setAbleton1(model->currentAbleton);
             transition(SETLISTSAVE);
         }
     } else if (mode == SETLISTSAVE) {
@@ -632,23 +636,23 @@ void update() {
         // when set, tempBank should be set to current bank
         SetlistPreset* targetSetlistPreset;
         if (press[1]) {
-            state->setlistBankDown();
+            model->setlistBankDown();
         }
         if (press[2]) {
-            state->setlistBankUp();
+            model->setlistBankUp();
         }
         if (pressHold[1] || pressHold[2]) {
             transition(SETLIST);
         }
         if (press[3] || press[4] || press[5]) {
             if (press[3]) {
-                targetSetlistPresetNum = state->getTempSetlistPresetNum(0);
+                targetSetlistPresetNum = model->getTempSetlistPresetNum(0);
             }
             if (press[4]) {
-                targetSetlistPresetNum = state->getTempSetlistPresetNum(1);
+                targetSetlistPresetNum = model->getTempSetlistPresetNum(1);
             }
             if (press[5]) {
-                targetSetlistPresetNum = state->getTempSetlistPresetNum(2);
+                targetSetlistPresetNum = model->getTempSetlistPresetNum(2);
             }
 
             storage->savePresetNumToSetlistPreset(buildingSetlistPreset->getPresetNum(), targetSetlistPresetNum);
@@ -662,7 +666,7 @@ void update() {
         if (setlistSaveStart == -1) {
             setlistSaveStart = millis();
         } else if (millis() - setlistSaveStart > 2000) {
-            state->selectSetlistPatchByNum(targetSetlistPresetNum);
+            model->selectSetlistPatchByNum(targetSetlistPresetNum);
             setlistSaveStart = -1;
             targetSetlistPresetNum = -1;
             transition(SETLIST);
@@ -698,7 +702,7 @@ void render() {
 
     if (mode == LIVE) {
         // light up which loops are active
-        loops = state->loops;
+        loops = model->loops;
         for (i = 0; i < 5; i++) {
             if((loops >> i) & 1) {
                 ledStates[i] = true;
@@ -718,7 +722,7 @@ void render() {
             ledStates[3] = true;
         }
         // light up led5 if loop 5 is active
-        loops = state->loops;
+        loops = model->loops;
         if((loops >> 4) & 1) {
             ledStates[4] = true;
         }
@@ -730,13 +734,13 @@ void render() {
             ledStates[1] = true;
         }
         // light up bank leds
-        int bank = state->getBank() + 1;
+        int bank = model->getBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
             }
         }
-        ledStates[state->getPatch() + 2] = true;
+        ledStates[model->getPatch() + 2] = true;
     } else if (mode == BANKSEARCH) {
         if (press[1] || pressed[1]) {
             ledStates[0] = true;
@@ -745,7 +749,7 @@ void render() {
             ledStates[1] = true;
         }
         // light up bank leds
-        int bank = state->getTempBank() + 1;
+        int bank = model->getTempBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
@@ -769,16 +773,16 @@ void render() {
             ledStates[1] = true;
         }
         // light up bank leds
-        int bank = state->getSetlistBank() + 1;
+        int bank = model->getSetlistBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
             }
         }
-        ledStates[state->getSetlistPatch() + 2] = true;
+        ledStates[model->getSetlistPatch() + 2] = true;
     } else if (mode == COPYSWAPSAVE) {
         // light up bank leds
-        int bank = state->getTempBank() + 1;
+        int bank = model->getTempBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
@@ -786,14 +790,14 @@ void render() {
         }
     } else if (mode == COPYSWAPSAVEWAIT) {
         // light up bank leds
-        int bank = state->getTempBank() + 1;
+        int bank = model->getTempBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
             }
         }
         if (targetPresetNum != -1) {
-            ledStates[state->getPatchForPresetNum(targetPresetNum) + 2] = true;
+            ledStates[model->getPatchForPresetNum(targetPresetNum) + 2] = true;
         }
     } else if (mode == SETLISTPRESETBUILD1) {
         if (press[1] || pressed[1]) {
@@ -803,7 +807,7 @@ void render() {
             ledStates[1] = true;
         }
         // light up bank leds
-        int bank = state->getTempBank() + 1;
+        int bank = model->getTempBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
@@ -816,8 +820,8 @@ void render() {
         if (press[2] || pressed[2]) {
             ledStates[1] = true;
         }
-        // light up bank leds as binary representation of state->ableton
-        int bank = state->currentAbleton;
+        // light up bank leds as binary representation of model->ableton
+        int bank = model->currentAbleton;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
@@ -831,30 +835,37 @@ void render() {
             ledStates[1] = true;
         }
         // light up bank leds
-        int bank = state->getSetlistBank() + 1;
+        int bank = model->getSetlistBank() + 1;
         for (i = 0; i < 4; i++) {
             if((bank >> i) & 1) {
                 ledStates[(3-i)+5] = true;
             }
         }
-        ledStates[state->getSetlistPatch() + 2] = true;
+        ledStates[model->getSetlistPatch() + 2] = true;
     }
     lightgrid->setLeds(ledStates);
 
     lightgrid->writeShifter();
 
-    // send midi program changes for midi1 and midi2
-    int program = state->getMidi1();
-    // Serial.println("SEND MIDI 1");
-    // Serial.println(program);
-    sendMidi(0xC1, program);
+    int program;
+    if (model->midi1 != oldModel->midi1) {
+        // send midi program changes for midi1 and midi2
+        program = model->getMidi1();
+        // Serial.println("SEND MIDI 1");
+        // Serial.println(program);
+        sendMidi(0xC1, program);
+    }
 
-    program = state->getMidi2();
-    // Serial.println("SEND MIDI 2");
-    // Serial.println(program);
-    sendMidi(0xC0, program);
+    if (model->midi2 != oldModel->midi2) {
+        program = model->getMidi2();
+        // Serial.println("SEND MIDI 2");
+        // Serial.println(program);
+        sendMidi(0xC0, program);
+    }
 
-    // trigger active loops, deactivate inactive loops
+    if (model->loops != oldModel->loops) {
+        // trigger active loops, deactivate inactive loops
+    }
 
     // set looper control relays to high if activated
     // set looper control relays to low if deactivated

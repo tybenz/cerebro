@@ -3,9 +3,9 @@
 Storage::Storage() {
 }
 
-void Storage::saveState(int mode, State* state) {
+void Storage::saveModel(int mode, Model* model) {
     // first unsigned char is 5 bits of loops followed by a zero followed by 2 bits for mode
-    unsigned char first = state->loops;
+    unsigned char first = model->loops;
 
     // copy first two mode bits onto bits 6 & 7 of first byte
     if ((mode >> 0) & 1) {
@@ -16,9 +16,9 @@ void Storage::saveState(int mode, State* state) {
     }
 
     EEPROM.write(0, first);
-    EEPROM.write(1, state->midi1);
-    EEPROM.write(2, state->midi2);
-    EEPROM.write(3, state->currentPreset);
+    EEPROM.write(1, model->midi1);
+    EEPROM.write(2, model->midi2);
+    EEPROM.write(3, model->currentPreset);
 }
 
 void Storage::savePresetByNum(Preset *preset, int num) {

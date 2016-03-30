@@ -1,9 +1,9 @@
-#ifndef State_h
-#define State_h
+#ifndef Model_h
+#define Model_h
 
 #include <Arduino.h>
 
-class State
+class Model
 {
     public:
         int currentPreset;
@@ -20,10 +20,10 @@ class State
         int getPatch();
         int getPatchForPresetNum(int num);
         int getSetlistPatch();
-        State();
-        void setState(int newPreset, int newSetlistPreset, int newMidi1, int newMidi2, int ableton, unsigned char newLoops, int newLooper[]);
-        bool diff(State* state);
-        State* copy();
+        Model();
+        void setModel(int newPreset, int newSetlistPreset, int newMidi1, int newMidi2, int ableton, unsigned char newLoops, int newLooper[]);
+        bool diff(Model* model);
+        Model* copy();
         void midi1Up();
         void midi1Down();
         void midi2Up();
@@ -65,4 +65,4 @@ class State
         void abletonSelectDown();
 };
 
-#endif //State_h
+#endif //Model_h
