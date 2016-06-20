@@ -36,18 +36,18 @@
 - 1-5 patches
 - PH5 -> SAVE
 
-## MIDI (blue)
+## PRESET (blue)
+- 6 bank up
+- 7 bank down
+- Bank search mode flashing bank leds - select 1-5 to confirm
+- PH1/PH2 exits "bank search mode" (returns to previous bank)
+- PH 1 2 3 4 5 -> COPYSWAP
+
+## MIDI (green)
 - 1 & 2 control Zoom
 - 3 & 4 control Nova Drive
 - 5 controls bypass loop #1
 - PH5 -> SAVE
-
-## PRESET (green)
-- 1 bank up
-- 2 bank down
-- Bank search mode flashing bank leds - select 1-5 to confirm
-- PH1/PH2 exits "bank search mode" (returns to previous bank)
-- PH 3 4 5 -> COPYSWAP
 
 ## LOOPER (white)
 - 1 2 & 3 control the looper bank up/down/undo
@@ -68,13 +68,13 @@
 - PH mode goes back to previous mode
 
 ## COPYSWAPSAVE (purple)
-- 1 bank down
-- 2 bank up
-- PH 1 or 2 PREVMODE
-- 3 4 or 5 to copy/save transition to COPYSWAPSAVEWAIT (flash 3, 4, 5 LED)
+- 6 bank down
+- 7 bank up
+- PH 6 or 7 PREVMODE
+- 1 2 3 4 or 5 to copy/save transition to COPYSWAPSAVEWAIT (flash 1, 2, 3, 4, 5 LED)
 
 ## COPYSWAPSAVEWAIT (purple flashing)
-- PH 3 4 or 5 to swap/save (will undo previous copy/overwrite) then go back to PRESET with newPreset
+- PH 1 2 3 4 or 5 to swap/save (will undo previous copy/overwrite) then go back to PRESET with newPreset
 - if 1.5sec pass and no PH, go to PRESET with newPreset
 
 ## STARTUP
@@ -84,12 +84,12 @@
 
 ## MEMORY
 - Patches (3 bytes each):
-  - 15 banks with 3 patches
+  - 15 banks with 5 patches
   - 1 byte for loops (5 bits used)
   - 2 bytes for midi commands (device 1 and 2) - program change + channel is implicit
 
-- 45 presets (15 banks * 3 patches)
-- 135 bytes for patches (45 * 3 bytes) (addresses 4-138)
+- 75 presets (15 banks * 5 patches)
+- 225 bytes for patches (75 * 3 bytes) (addresses 4-228)
 
 - Model (4 bytes) (addresses 0-3):
   - 1st byte: first 5 bits for active loops. last 2 bits for mode (LIVE, MIDI, LOOPER, PRESET)

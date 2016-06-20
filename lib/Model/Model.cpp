@@ -1,6 +1,6 @@
 #include <Model.h>
 
-int PPB = 3; // patches per bank
+int PPB = 5; // patches per bank
 int NUM_BANKS = 15; // binary 3 digits (not zero)
 int MAX_PRESETS = PPB * NUM_BANKS;
 

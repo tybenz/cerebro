@@ -16,8 +16,8 @@ SoftwareSerial mySerial(8, 7); // RX, TX
 
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 #define LIVE 0
-#define MIDI 1
-#define PRESET 2
+#define PRESET 1
+#define MIDI 2
 #define LOOPER 3
 #define ABLETON 4
 #define NUM_WRITEABLE_MODES 4
@@ -72,9 +72,9 @@ bool release[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int modeColors[14][3] = {
     // LIVE red
     {255, 0, 0},
-    // MIDI blue
+    // PRESET blue
     {0, 0, 255},
-    // PRESET green
+    // MIDI green
     {0, 255, 0},
     // LOOPER white
     {255, 255, 255},
