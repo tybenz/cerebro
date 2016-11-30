@@ -124,12 +124,12 @@ int oldInput1 = 0;
 int oldInput2 = 0;
 long lastReadTime = 0;
 int thresholds[6][3] = {
-    {0, 600, 670},
-    {0, 550, 595},
-    {1, 600, 670},
-    {0, 400, 490},
-    {1, 550, 595},
-    {0, 200, 290}
+    {0, 0, 400},
+    {1, 0, 400},
+    {0, 401, 600},
+    {1, 401, 600},
+    {0, 601, 900},
+    {1, 601, 900}
 };
 
 void loop() {
@@ -137,18 +137,19 @@ void loop() {
     int input2 = analogRead(A6);
     int input;
 
-    if (oldInput1 - input1 > 20 || input1 - oldInput1 < -20) {
-        Serial.println("INPUT 1:");
-        Serial.println(oldInput1);
-        Serial.println(input1);
-        Serial.println("\n");
-    }
-    if (oldInput2 - input2 > 20 || input2 - oldInput2 < -20) {
-        Serial.println("INPUT 2:");
-        Serial.println(oldInput2);
-        Serial.println(input2);
-        Serial.println("\n");
-    }
+    // debug log for input values
+    // if (oldInput1 - input1 > 20 || input1 - oldInput1 < -20) {
+    //     Serial.println("INPUT 1:");
+    //     Serial.println(oldInput1);
+    //     Serial.println(input1);
+    //     Serial.println("\n");
+    // }
+    // if (oldInput2 - input2 > 20 || input2 - oldInput2 < -20) {
+    //     Serial.println("INPUT 2:");
+    //     Serial.println(oldInput2);
+    //     Serial.println(input2);
+    //     Serial.println("\n");
+    // }
 
     for (int i = 0; i < BUTTON_COUNT; i++) {
         press[i] = false;
@@ -167,11 +168,11 @@ void loop() {
         bool prevState = button.state;
         if (input >= threshold[1] && input <= threshold[2]) {
             button.state = true;
-            if (prevState) {
+            if (!prevState) {
                 button.time = millis();
                 press[i] = true;
             }
-            if (( millis() - button.time ) > 1000 && !button.pressHold) {
+            if (button.time != -1 && ( millis() - button.time ) > 1000 && !button.pressHold) {
                 pressHold[i] = true;
                 button.pressHold = true;
             }
