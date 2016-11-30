@@ -1,14 +1,12 @@
 #include <LightGrid.h>
 #include <Storage.h>
 #include <State.h>
-#include <Buttons.h>
 #include <Preset.h>
 #include <SoftwareSerial.h>
 
 LightGrid* lightgrid;
 Storage* storage = new Storage();
 State* state = new State();
-Buttons* buttons = new Buttons();
 
 SoftwareSerial mySerial(8, 7); // RX, TX
 
@@ -78,12 +76,30 @@ void sendMidi(int aMidiCommand, int aData1) {
 
 int writableMode = 0;
 
+struct button {
+    long time;
+    bool state;
+    bool prevState;
+    bool press;
+    bool pressed;
+    bool pressHold;
+    bool pressedHeld;
+    bool release;
+};
+const struct button initButton = {
+    -1.0, 0, 0, 0, 0, 0, 0, 0
+};
+struct button buttons[ACTUAL_BUTTON_COUNT];
+
 void setup() {
     mySerial.begin(31250);
 
+    for (int i = 0; i < BUTTON_COUNT; i++) {
+        buttons[i] = initButton;
+    }
+
     lightgrid = new LightGrid(3, 4, 5, 6);
     Serial.begin(9600);
-    Serial.println(10000);
     pinMode(A5, INPUT_PULLUP); // sets analog pin for input
     pinMode(A6, INPUT_PULLUP); // sets analog pin for input
 
@@ -107,42 +123,112 @@ int debounceDelay = 30;
 int oldInput1 = 0;
 int oldInput2 = 0;
 long lastReadTime = 0;
+int thresholds[6][3] = {
+    {0, 600, 670},
+    {0, 550, 595},
+    {1, 600, 670},
+    {0, 400, 490},
+    {1, 550, 595},
+    {0, 200, 290}
+};
 
 void loop() {
     int input1 = analogRead(A5);
     int input2 = analogRead(A6);
-    if (input1 != oldInput1 || input2 != oldInput2) {
-        delay(20);
-        int input3 = analogRead(A5);
-        int input4 = analogRead(A6);
-        if (input1 - input3 < 20 && input1 - input3 > -20 ||
-            input2 - input4 < 20 && input2 - input4 > -20) {
-            oldInput1 = input1;
-            oldInput2 = input2;
-            int i = 0;
-            State* oldState = state->copy();
+    int input;
 
-            buttons->updateStates(input1, input2);
+    if (oldInput1 - input1 > 20 || input1 - oldInput1 < -20) {
+        Serial.println("INPUT 1:");
+        Serial.println(oldInput1);
+        Serial.println(input1);
+        Serial.println("\n");
+    }
+    if (oldInput2 - input2 > 20 || input2 - oldInput2 < -20) {
+        Serial.println("INPUT 2:");
+        Serial.println(oldInput2);
+        Serial.println(input2);
+        Serial.println("\n");
+    }
 
-            for (int i = 0; i < BUTTON_COUNT; i++) {
-                press[i] = false;
-                pressed[i] = false;
-                pressHold[i] = false;
-                release[i] = false;
+    for (int i = 0; i < BUTTON_COUNT; i++) {
+        press[i] = false;
+        pressed[i] = false;
+        pressHold[i] = false;
+        release[i] = false;
+    }
+
+    for (int i = 0; i < ACTUAL_BUTTON_COUNT; i++) {
+        input = input1;
+        int* threshold = thresholds[i];
+        if (threshold[0]) {
+            input = input2;
+        }
+        struct button button = buttons[i];
+        bool prevState = button.state;
+        if (input >= threshold[1] && input <= threshold[2]) {
+            button.state = true;
+            if (prevState) {
+                button.time = millis();
+                press[i] = true;
             }
-            buttons->detectEvents(press, pressed, pressHold, release);
-
-        update();
-
-            // If state has changed
-            if (firstLoop || state->diff(oldState) || prevMode != mode) {
-                firstLoop = false;
-                render();
-
-                storage->saveState(writableMode, state);
+            if (( millis() - button.time ) > 1000 && !button.pressHold) {
+                pressHold[i] = true;
+                button.pressHold = true;
+            }
+        } else {
+            button.state = false;
+            if (prevState) {
+                button.time = -1;
+                button.pressHold = false;
             }
         }
+        buttons[i] = button;
     }
+
+    State* oldState = state->copy();
+
+    update();
+
+    // If state has changed
+    if (firstLoop || state->diff(oldState) || prevMode != mode) {
+        firstLoop = false;
+        render();
+
+        storage->saveState(writableMode, state);
+    }
+
+    /* if (input1 != oldInput1 || input2 != oldInput2) { */
+    /*     delay(20); */
+    /*     int input3 = analogRead(A5); */
+    /*     int input4 = analogRead(A6); */
+    /*     if (input1 - input3 < 20 && input1 - input3 > -20 || */
+    /*         input2 - input4 < 20 && input2 - input4 > -20) { */
+    /*         oldInput1 = input1; */
+    /*         oldInput2 = input2; */
+    /*         int i = 0; */
+    /*         State* oldState = state->copy(); */
+
+    /*         buttons->updateStates(input1, input2); */
+
+    /*         for (int i = 0; i < BUTTON_COUNT; i++) { */
+    /*             press[i] = false; */
+    /*             pressed[i] = false; */
+    /*             pressHold[i] = false; */
+    /*             release[i] = false; */
+    /*         } */
+    /*         buttons->detectEvents(press, pressed, pressHold, release); */
+
+    /*     update(); */
+
+    /*         // If state has changed */
+    /*         if (firstLoop || state->diff(oldState) || prevMode != mode) { */
+    /*             firstLoop = false; */
+    /*             render(); */
+
+    /*             storage->saveState(writableMode, state); */
+    /*         } */
+    /*     } */
+    /* } */
     oldInput1 = input1;
     oldInput2 = input2;
 }
@@ -169,6 +255,52 @@ void update() {
     if (press[0]) {
         // cycle through modes
         nextMode();
+        Serial.println("PRESS");
+        Serial.println(0);
+    }
+    if (press[1]) {
+        Serial.println("PRESS");
+        Serial.println(1);
+    }
+    if (press[2]) {
+        Serial.println("PRESS");
+        Serial.println(2);
+    }
+    if (press[3]) {
+        Serial.println("PRESS");
+        Serial.println(3);
+    }
+    if (press[4]) {
+        Serial.println("PRESS");
+        Serial.println(4);
+    }
+    if (press[5]) {
+        Serial.println("PRESS");
+        Serial.println(5);
+    }
+    if (pressHold[0]) {
+        Serial.println("PRESS HOLD");
+        Serial.println(0);
+    }
+    if (pressHold[1]) {
+        Serial.println("PRESS HOLD");
+        Serial.println(1);
+    }
+    if (pressHold[2]) {
+        Serial.println("PRESS HOLD");
+        Serial.println(2);
+    }
+    if (pressHold[3]) {
+        Serial.println("PRESS HOLD");
+        Serial.println(3);
+    }
+    if (pressHold[4]) {
+        Serial.println("PRESS HOLD");
+        Serial.println(4);
+    }
+    if (pressHold[5]) {
+        Serial.println("PRESS HOLD");
+        Serial.println(5);
     }
 
     if (mode == LIVE) {
