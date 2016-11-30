@@ -12,12 +12,10 @@ SoftwareSerial mySerial(8, 7); // RX, TX
 
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 #define LIVE 0
-#define MIDI 1
-#define PRESET 2
-#define LOOPER 3
-#define COPYSWAPSAVE 4
-#define COPYSWAPSAVEWAIT 5
-#define BANKSEARCH 6
+#define PRESET 1
+#define COPYSWAPSAVE 2
+#define COPYSWAPSAVEWAIT 3
+#define BANKSEARCH 4
 #define SAVETYPE_NONE -1
 #define SAVETYPE_LOOPS 0
 #define SAVETYPE_MIDI 1
@@ -54,16 +52,14 @@ bool release[BUTTON_COUNT] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int modeColors[7][3] = {
     // LIVE red
     {255, 0, 0},
-    // MIDI blue
+    // PRESET blue
     {0, 0, 255},
-    // PRESET green
-    {0, 255, 0},
     // LOOPER white
     {255, 255, 255},
     // COPYSWAPSAVE magenta
-    {255, 50, 255},
+    {0, 255, 0},
     // COPYSWAPSAVEWAIT magenta
-    {255, 50, 255},
+    {0, 255, 0},
     // BANKSEARCH green
     {0, 255, 0}
 };
@@ -237,7 +233,7 @@ void loop() {
 void nextMode() {
     prevMode = mode;
     mode++;
-    if (mode > 3) {
+    if (mode > 1) {
         mode = LIVE;
     }
     writableMode = mode;
@@ -245,7 +241,7 @@ void nextMode() {
 
 void transition(int newMode) {
     prevMode = mode;
-    if (newMode < 4) {
+    if (newMode < 1) {
         writableMode = newMode;
     }
     mode = newMode;
@@ -326,30 +322,6 @@ void update() {
             saveLoops = state->getLoops();
             transition(COPYSWAPSAVE);
         }
-    } else if (mode == MIDI) {
-        // press on 1 & 2 trigger midi1 down/up
-        if (press[1]) {
-            state->midi1Down();
-        }
-        if (press[2]) {
-            state->midi1Up();
-        }
-        if (press[3]) {
-            state->midi2Down();
-        }
-        if (press[4]) {
-            state->midi2Up();
-        }
-        if (press[5]) {
-            state->toggleLoop(4);
-        }
-        if(pressHold[5]) {
-            // transition to SAVE
-            saveType = SAVETYPE_MIDI;
-            saveMidi1 = state->getMidi1();
-            saveMidi2 = state->getMidi2();
-            transition(COPYSWAPSAVE);
-        }
     } else if (mode == PRESET) {
         // press on 1 & 2 trigger bank down/up. trigger BANKSEARCH
         int presetNum;
@@ -366,22 +338,16 @@ void update() {
             presetNum = state->selectPatch(0);
             preset = storage->getPresetByNum(presetNum);
             state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
         }
         if (press[4]) {
             presetNum = state->selectPatch(1);
             preset = storage->getPresetByNum(presetNum);
             state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
         }
         if (press[5]) {
             presetNum = state->selectPatch(2);
             preset = storage->getPresetByNum(presetNum);
             state->setLoops(preset->getLoops());
-            state->setMidi1(preset->getMidi1());
-            state->setMidi2(preset->getMidi2());
         }
         if (pressHold[3]) {
             srcPresetNum = state->getPresetNum(0);
@@ -397,32 +363,6 @@ void update() {
             srcPresetNum = state->getPresetNum(2);
             srcPreset = storage->getPresetByNum(srcPresetNum);
             transition(COPYSWAPSAVE);
-        }
-    } else if (mode == LOOPER) {
-        // XXX should this go through state + render or be "special" in that we
-        // can hard-code right here?
-        //
-        // press on 1, 2, 3 trigger relays
-        if (press[1]) {
-            state->activateLooperControl(0);
-        }
-        if (press[2]) {
-            state->activateLooperControl(1);
-        }
-        if (press[3]) {
-            state->activateLooperControl(2);
-        }
-        if (release[1]) {
-            // set relay low
-            state->deactivateLooperControl(0);
-        }
-        if (release[2]) {
-            // set relay low
-            state->deactivateLooperControl(1);
-        }
-        if (release[3]) {
-            // set relay low
-            state->deactivateLooperControl(2);
         }
     } else if (mode == COPYSWAPSAVE) {
         // when set, tempBank should be set to current bank
@@ -457,9 +397,6 @@ void update() {
                 // came from either LIVE or MIDI, just saving to a preset
                 if (saveType == SAVETYPE_LOOPS) {
                     storage->saveLoopsToPreset(saveLoops, targetPresetNum);
-                    state->selectPatchByNum(targetPresetNum);
-                } else if (saveType == SAVETYPE_MIDI) {
-                    storage->saveMidiToPreset(saveMidi1, saveMidi2, targetPresetNum);
                     state->selectPatchByNum(targetPresetNum);
                 }
                 saveType = SAVETYPE_NONE;
@@ -546,24 +483,6 @@ void render() {
                 ledStates[i] = true;
             }
         }
-    } else if (mode == MIDI) {
-        if (press[1] || pressed[1]) {
-            ledStates[0] = true;
-        }
-        if (press[2] || pressed[2]) {
-            ledStates[1] = true;
-        }
-        if (press[3] || pressed[3]) {
-            ledStates[2] = true;
-        }
-        if (press[4] || pressed[4]) {
-            ledStates[3] = true;
-        }
-        // light up led5 if loop 5 is active
-        loops = state->loops;
-        if((loops >> 4) & 1) {
-            ledStates[4] = true;
-        }
     } else if (mode == PRESET) {
         if (press[1] || pressed[1]) {
             ledStates[0] = true;
@@ -593,16 +512,6 @@ void render() {
                 ledStates[(3-i)+5] = true;
             }
         }
-    } else if (mode == LOOPER) {
-        if (press[1] || pressed[1]) {
-            ledStates[0] = true;
-        }
-        if (press[2] || pressed[2]) {
-            ledStates[1] = true;
-        }
-        if (press[3] || pressed[3]) {
-            ledStates[2] = true;
-        }
     } else if (mode == COPYSWAPSAVE) {
         // light up bank leds
         int bank = state->getTempBank() + 1;
@@ -627,16 +536,7 @@ void render() {
 
     lightgrid->writeShifter();
 
-    // send midi program changes for midi1 and midi2
-    int program = state->getMidi1();
-    // Serial.println("SEND MIDI 1");
-    // Serial.println(program);
-    sendMidi(0xC1, program);
-
-    program = state->getMidi2();
-    // Serial.println("SEND MIDI 2");
-    // Serial.println(program);
-    sendMidi(0xC0, program);
+    // sendMidi(0xC1, program);
 
     // trigger active loops, deactivate inactive loops
 

@@ -65,8 +65,6 @@ void State::midi2Up() {
     if (midi2 > 127) {
         midi2 = 127;
     }
-    Serial.println("MIDI2");
-    Serial.println(midi2);
 }
 
 void State::midi2Down() {
@@ -74,8 +72,6 @@ void State::midi2Down() {
     if (midi2 < 0) {
         midi2 = 0;
     }
-    Serial.println("MIDI2");
-    Serial.println(midi2);
 }
 
 void State::bankUp() {
